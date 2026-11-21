@@ -172,10 +172,11 @@ Not-measured values are marked n/m.}
 Method & Split & Overall & In-dist & High-e & Sparse & CPU-s/star \\
 \midrule
 Official baseline & validation & 0.4715 & 0.5975 & 0.316 & 0.375 & 0.24 \\
-Official baseline & hidden test & \tbd & \tbd & \tbd & \tbd & -- \\
-Final model & validation & \tbd & \tbd & \tbd & \tbd & \tbd \\
-Final model & hidden test & \tbd & \tbd & \tbd & \tbd & -- \\
-\fillin{BOTH}{alternative} & validation & \tbd & \tbd & \tbd & \tbd & \tbd \\
+Official baseline & hidden test & n/a & n/a & n/a & n/a & -- \\
+Final model & validation & 0.4748 & 0.6035 & 0.311 & 0.381 & 0.31 \\
+Final model & hidden test & 0.4725 & n/a & n/a & n/a & -- \\
+Alternative: Occam only & validation & 0.4718 & 0.601 & 0.309 & 0.376 & 0.31 \\
+Alternative: $K$-debias only & validation & 0.4735 & 0.599 & 0.318 & 0.378 & 0.31 \\
 Fisher ceiling & validation & 0.536 & 0.657 & 0.357 & 0.472 & -- \\
 \bottomrule
 \end{tabularx}
@@ -246,6 +247,29 @@ insights and limitations are our own.}
 % OPTIONAL: delete this entire section if we do not find a reproducible loophole.
 % It counts toward the four-page body.
 \section*{Optional: Reward hacking discovery}
+% FACTS (results/loophole_demo.json, tools/loophole_demo.py; LOCAL ONLY, never uploaded). Explanation, fix and
+% false-positive discussion must be written by us (README: "Your team writes ... loophole explanations").
+%  - e is not in the success criterion: replacing every e by 0.1 leaves success unchanged and passes all health gates,
+%    while median |de| rises 0.059 -> 0.152 on validation; in the high_ecc group 0.065 -> 0.648 (10x), in-dist 0.042 -> 0.089.
+%  - The K box |K'-K|/K < 0.1 is asymmetric in log space ([-0.0458, +0.0414] dex); K x 0.995 recentres it:
+%    +14/-10 on validation, +19/-13 on 6,000 train stars (n.s., +0.1 pt). It cannot explain our K-debias gain
+%    (+70/-39, and the threshold-free median rel K error also drops 0.0790 -> 0.0751).
+%  - Possible fixes: success criterion in log space |log K'/K| < log 1.1; an e-accuracy gate or e in the criterion.
+%    False positive to discuss: at low SNR e is genuinely unconstrained, so an e gate would penalise honest methods.
+\begin{table}[ht]
+\caption{Metric audit on validation (local; not a submitted model). The ``loophole'' variant changes no physics.}
+\centering\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Predictions & Success & vs.\ final & Median $|\Delta e|$ & Median $|\Delta K|/K$ \\
+\midrule
+Final model (submission 16) & 0.4748 & -- & 0.059 & 0.0751 \\
+$e \to 0.1$ for every star & 0.4748 & +0/$-$0 & 0.152 & 0.0751 \\
+$K \to 0.995\,K$ (recentre box) & 0.4758 & +14/$-$10 & 0.059 & 0.0742 \\
+Both (``loophole model'') & 0.4758 & +14/$-$10 & 0.152 & 0.0742 \\
+\bottomrule
+\end{tabular}
+\end{table}
 \fillin{PRISHA}{Only if reproducible. Scientific goal vs metric incentive;
 triggering condition; minimal reproducible example; evidence that a high
 score coexists with scientific failure; proposed fix and its false positives.
