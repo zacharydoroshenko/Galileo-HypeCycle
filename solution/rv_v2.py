@@ -90,7 +90,10 @@ CONFIG = {
     "sparse_nobs": 20,
     "jitter_dof": False,
     "jitter_min_nobs": 0,      # jitter_fit only for stars with >= this many observations (0 = all)
-    "occam_e_cut": None,       # if set, no Occam term for candidates whose fitted e exceeds this       # ML jitter with N/(N-6) residual correction (less biased for few points)
+    "occam_e_cut": None,
+    "evidence_mode": None,     # "grid": score candidates by -log marginal likelihood over the (e, omega, M0) grid
+                               # (K, gamma marginalised analytically; + period width from the fit), The-Joker style
+    "evidence_weight": 1.0,    # grid score = w * (-logZ) + (1 - w) * (current nll + occam)       # if set, no Occam term for candidates whose fitted e exceeds this       # ML jitter with N/(N-6) residual correction (less biased for few points)
     "k_debias_c": 0.0,         # K_out = K / sqrt(1 + c / snr^2), snr = K sqrt(N) / sig_eff (low-SNR ML K bias)
     "k_debias_floor": 0.5,
     "k_debias_noise": "assumed",  # "assumed": sig_eff^2 = mean(sigma^2) + 2^2; "residual": RMS residual * N/(N-6)
@@ -244,6 +247,22 @@ def refine(t, y, sig_eff, x0, f_lo, f_hi, max_nfev=MAX_NFEV):
     return (float(res.cost), res.x, res.jac) if np.isfinite(res.cost) else None
 
 
+def _grid_log_evidence(t, y, w, period, ext=False):
+    """log marginal likelihood (up to a constant shared by all candidates) over the (e, omega, M0) start grid at
+    a fixed period, with K and gamma marginalised analytically under flat priors (Gaussian integral):
+        log Z = logmeanexp_g[ -chi2_g / 2 - 0.5 log det(A_g^T W A_g) ],  A_g = [shape_g, 1]."""
+    es, oms, ms = _GRID_EXT if ext else (_GRID_E, _GRID_OMEGA, _GRID_M0)
+    f = shape(t[None, :], period, es[:, None], oms[:, None], ms[:, None])  # [G, n]
+    _, _, chi2 = _linear_k_gamma(f, y, w)
+    sw = w.sum()
+    a11 = (w * f * f).sum(-1)
+    a12 = (w * f).sum(-1)
+    det = np.maximum(a11 * sw - a12 * a12, 1e-300)
+    terms = -0.5 * chi2 - 0.5 * np.log(det)
+    m = terms.max()
+    return float(m + np.log(np.mean(np.exp(terms - m))))
+
+
 def _ml_jitter(r, sig, dof=False):
     """Maximum-likelihood jitter s >= 0 for residuals r with reported errors sig (1-D, bounded).
     dof=True inflates residuals by sqrt(N/(N-6)) (6 fitted Keplerian parameters), removing most
@@ -302,7 +321,7 @@ def fit_star(x_star: np.ndarray, cfg: dict | None = None) -> np.ndarray:
     occ_w = cfg["occam_weight"]
     if cfg.get("occam_weight_sparse") is not None and len(t) <= int(cfg["sparse_nobs"]):
         occ_w = cfg["occam_weight_sparse"]
-    plain = not (cfg["jitter_fit"] or occ_w or cfg["bound_penalty"])
+    plain = not (cfg["jitter_fit"] or occ_w or cfg["bound_penalty"] or cfg.get("evidence_mode"))
     if plain:  # exactly the baseline decision rule
         best_x = min(fits, key=lambda z: z[0])[1]
     else:
@@ -340,6 +359,16 @@ def fit_star(x_star: np.ndarray, cfg: dict | None = None) -> np.ndarray:
                     sign, logdet = np.linalg.slogdet(F)
                     if sign > 0:
                         score += occ_here * 0.5 * logdet
+            if cfg.get("evidence_mode") == "grid":
+                period_fit = float(np.exp(x[0]))
+                logz = _grid_log_evidence(t, y, w, period_fit, ext=bool(cfg["e_grid_ext"]))
+                try:  # period integrated over a log-uniform prior: + log sigma(lnP) from the fit covariance
+                    cov = np.linalg.inv(jac.T @ jac + 1e-9 * np.eye(jac.shape[1]))
+                    logz += 0.5 * np.log(max(cov[0, 0], 1e-300))
+                except np.linalg.LinAlgError:
+                    pass
+                wv = float(cfg.get("evidence_weight", 1.0))
+                score = wv * (-logz) + (1.0 - wv) * score
             if cfg["bound_penalty"]:
                 lnp, lnk = x[0], x[1]
                 out = max(0.0, lp_lo - lnp, lnp - lp_hi) + max(0.0, lk_lo - lnk, lnk - lk_hi)
