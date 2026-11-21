@@ -12,7 +12,11 @@ leaderboard as Hype Cycle / G2-15). Portal scoring time **155 s**, which matches
 The model is **frozen**; 4 of 5 uploads are left in reserve.
 
 **How good is 0.4725? Reference points (facts; the framing in the report is ours to write):**
-1. **Physical limit.** The Fisher ceiling (official `headroom.py`, validation) is **0.536**. We reach **88.6%** of it on
+1. **Information ceiling (not a hard limit).** The Fisher (Cramér–Rao) ceiling from the official `headroom.py` (source:
+   TASK_CARD "Difficulty" section, reproduced by our run: `results/headroom_*.json`, `fisher_ceiling` 0.5357) is **0.536**.
+   It is the mean probability that an *unbiased* estimator near the true orbit lands in the success box. The script
+   itself says it is LOCAL (ignores aliases) and "not a strict bound on any estimator": biased estimators/priors (like our
+   K-debias) can beat it on some stars, while aliases make it optimistic in practice. Call it a benchmark, not "the maximum". We reach **88.6%** of it on
    validation; the baseline reaches 88.0%. TASK_CARD: "large gains in success_rate are not physically possible". About 6 points
    of headroom remain, mostly stars where the data genuinely prefer a wrong answer (only 2.7% of our failures are
    recoverable by a better search).
