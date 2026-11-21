@@ -43,6 +43,16 @@ BATCH2 = {
     "occ0.75+kdb7": {"occam_weight": 0.75, "k_debias_c": 6.95},
     "occ0.5+kdb7+jd": {"occam_weight": 0.5, "k_debias_c": 6.95, "jitter_fit": True, "jitter_dof": True},
 }
+FINAL = {"occam_weight": 0.5, "k_debias_c": 6.95}  # = submission 16
+BATCH3 = {
+    "final": dict(FINAL),
+    "f+jit": dict(FINAL, jitter_fit=True, jitter_dof=True),
+    "f+jit30": dict(FINAL, jitter_fit=True, jitter_dof=True, jitter_min_nobs=30),
+    "f+ecut0.6": dict(FINAL, occam_e_cut=0.6),
+    "f+ecut0.5": dict(FINAL, occam_e_cut=0.5),
+    "f+jit30+ecut0.6": dict(FINAL, jitter_fit=True, jitter_dof=True, jitter_min_nobs=30, occam_e_cut=0.6),
+}
+SETS3 = {"fstd2000": "fresh_std2000.npz", "fsparse2000": "fresh_sparse2000.npz", "fhie600": "fresh_hie600.npz"}
 SETS = {"std1000": "confirm_std1000.npz", "sparse600": "confirm_sparse600.npz", "hiecc300": "train_hiecc300.npz"}
 SETS2 = {"std1000": "confirm_std1000.npz", "sparseV2": "confirm_sparse_v2_1000.npz", "hiecc300": "train_hiecc300.npz"}
 REFS = ("plain", "occam0.5")  # paired comparisons against the baseline rule and against upload #1
@@ -64,6 +74,8 @@ if __name__ == "__main__":
     a = ap.parse_args()
     if a.batch == 2:
         CONFIGS, SETS = BATCH2, SETS2
+    if a.batch == 3:
+        CONFIGS, SETS, REFS = BATCH3, SETS3, ("final",)
     a.configs = a.configs or list(CONFIGS)
     import rv_v2
     from evaluate import success
@@ -87,7 +99,7 @@ if __name__ == "__main__":
                 if k in ref[r] and r != name:
                     g, l = int((ok & ~ref[r][k]).sum()), int((~ok & ref[r][k]).sum())
                     rec[f"{k}_vs_{r}"] = [g, l, sign_p(g, l)]
-                    cmp.append(f"{'vB' if r == 'plain' else 'v1'} +{g}/-{l} p={sign_p(g, l):.2f}")
+                    cmp.append(f"{ {'plain': 'vB', 'occam0.5': 'v1'}.get(r, 'vF') } +{g}/-{l} p={sign_p(g, l):.2f}")
             parts.append(f"{k} {ok.mean():.4f} [" + "; ".join(cmp) + "]")
         rec["sec"] = time.time() - t0
         print(f"{name:17s} " + "  ".join(parts) + f"  ({rec['sec']:.0f}s)", flush=True)

@@ -88,7 +88,9 @@ CONFIG = {
     "occam_mode": "full",      # "full": 0.5 logdet(J^T J); "pk": -0.5 logdet of marginal cov(lnP, lnK)
     "occam_weight_sparse": None,  # if set, occam weight used for stars with <= sparse_nobs observations
     "sparse_nobs": 20,
-    "jitter_dof": False,       # ML jitter with N/(N-6) residual correction (less biased for few points)
+    "jitter_dof": False,
+    "jitter_min_nobs": 0,      # jitter_fit only for stars with >= this many observations (0 = all)
+    "occam_e_cut": None,       # if set, no Occam term for candidates whose fitted e exceeds this       # ML jitter with N/(N-6) residual correction (less biased for few points)
     "k_debias_c": 0.0,         # K_out = K / sqrt(1 + c / snr^2), snr = K sqrt(N) / sig_eff (low-SNR ML K bias)
     "k_debias_floor": 0.5,
     "k_debias_noise": "assumed",  # "assumed": sig_eff^2 = mean(sigma^2) + 2^2; "residual": RMS residual * N/(N-6)
@@ -308,8 +310,9 @@ def fit_star(x_star: np.ndarray, cfg: dict | None = None) -> np.ndarray:
         lp_lo, lp_hi = np.log(cfg["P_bounds"][0]), np.log(cfg["P_bounds"][1])
         lk_lo, lk_hi = np.log(cfg["K_bounds"][0]), np.log(cfg["K_bounds"][1])
         best_score, best_x = np.inf, None
+        do_jit = bool(cfg["jitter_fit"]) and len(t) >= int(cfg.get("jitter_min_nobs", 0))
         for cost, x, jac, f_lo, f_hi in fits[: int(cfg["n_rescore"])]:
-            if cfg["jitter_fit"]:
+            if do_jit:
                 for _ in range(2):  # alternate: ML jitter given orbit, orbit given jitter
                     s_j, _ = _ml_jitter(y - _model(x, t), sig, dof=bool(cfg["jitter_dof"]))
                     se = np.sqrt(sig**2 + s_j**2)
@@ -319,22 +322,24 @@ def fit_star(x_star: np.ndarray, cfg: dict | None = None) -> np.ndarray:
                     cost, x, jac = fit
                 s_j, nll = _ml_jitter(y - _model(x, t), sig, dof=bool(cfg["jitter_dof"]))
             else:
-                nll = cost  # chi2/2 at the fixed jitter guess
+                nll = cost  # chi2/2 at the fixed jitter guess (also when jitter_min_nobs excludes this star)
             score = nll
-            if occ_w:
+            e_fit = float(x[2] ** 2 + x[3] ** 2)
+            occ_here = occ_w if (cfg.get("occam_e_cut") is None or e_fit <= float(cfg["occam_e_cut"])) else 0.0
+            if occ_here:
                 F = jac.T @ jac + 1e-9 * np.eye(jac.shape[1])
                 if cfg["occam_mode"] == "pk":
                     try:  # marginal covariance of (lnP, lnK) only: does not penalise sharp eccentric fits
                         cov = np.linalg.inv(F)[:2, :2]
                         sign, logdet_cov = np.linalg.slogdet(cov)
                         if sign > 0:
-                            score += occ_w * (-0.5) * logdet_cov
+                            score += occ_here * (-0.5) * logdet_cov
                     except np.linalg.LinAlgError:
                         pass
                 else:
                     sign, logdet = np.linalg.slogdet(F)
                     if sign > 0:
-                        score += occ_w * 0.5 * logdet
+                        score += occ_here * 0.5 * logdet
             if cfg["bound_penalty"]:
                 lnp, lnk = x[0], x[1]
                 out = max(0.0, lp_lo - lnp, lnp - lp_hi) + max(0.0, lk_lo - lnk, lnk - lk_hi)
