@@ -30,8 +30,8 @@ def load_plugin(path):
 def success(pred, true, p_tol=0.01, k_tol=0.10):
     P, Pt = 10 ** pred[:, 0], 10 ** true[:, 0]
     K, Kt = 10 ** pred[:, 1], 10 ** true[:, 1]
-    okP = np.abs(P / Pt - 1) <= p_tol
-    okK = np.abs(K / Kt - 1) <= k_tol
+    okP = np.abs(P - Pt) / Pt < p_tol
+    okK = np.abs(K - Kt) / Kt < k_tol
     return okP & okK, okP, okK
 
 
