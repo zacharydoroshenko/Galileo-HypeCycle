@@ -1,23 +1,22 @@
 # Work Split: exoplanet-orbits (Track 2, Physics)
 
-**Zach** owns the model and all uploads. **Prisha** owns the evidence, the reproducibility checks and the report.
+**Zach** owns the model and all uploads. **Prisha** owns the report and the submission record.
 Only Zach uploads models, so the upload budget and the 3-minute gap between uploads stay under one person's control.
-The deadlines are extended; confirm the new model and report deadlines with the organizers.
+The extension, the new deadlines and the hidden-test scoring have been confirmed with the organizers on Discord.
 
 ## Ownership
 
+Prisha's column is her to-do list, in order (1 → 4).
+
 | Area | Zach | Prisha |
 |---|---|---|
-| Model (`solution/rv_v2.py`) | Iterate on the improvement switches: `jitter_fit`, `bound_penalty`, `yearly_aliases` on top of `occam_weight=0.5`; try a train-label prior on P and K for the sparse regime | Optional side experiment on a separate branch (e.g. the sparse-regime prior tuned on the `sparse15` proxy); hand the setting to Zach |
-| Ablations and confirmation | Run `tools/ablate_v2.py` / `tools/confirm_v2.py` on held-out TRAIN stars | Re-run the official baseline and the current `rv_v2` setting on the same train-only sets, broken down by regime |
-| Failure analysis | Use the results to decide the next change | Use `tools/diagnose.py` and the breakdown from `tools/evaluate.py` to split the misses into K wrong, yearly/daily alias and too little signal; compare with the theoretical best in the TASK_CARD |
-| Experiment log | Report each run (what changed, why, result) | Keep the shared log: run ID, commit, settings, reason, result, decision (negative results included) |
-| Packaging | Build the ZIP with `tools/package_v2.py` | Before each upload, check that `train_command` works in a fresh folder with the train split only, that `submission.json` is at the ZIP root with all its fields and paths, and that there are no secrets, logs, caches or symlinks |
-| Uploads | Upload a safe first model early (baseline + occam), then the final one; leave ≥3 min between uploads | Record each submission ID, ZIP checksum and score |
-| Figures and tables | Supply numbers on request | Make the comparison table (official baseline / final model / an alternative, by regime); a chart of success vs. the theoretical best; a failure-breakdown chart; example fits for one star we get right and one where the wrong period wins |
-| Report (`report/main.tex`, ≤4 pages) | Write the method and research-trajectory sections; review the full draft | Write goal and hypothesis, comparisons, insights, limitations and next experiment, plus reproducibility; get it compiling early; upload the PDF linked to the final submission ID |
-| Reward-hacking section (optional award) | Sanity-check any exploit found | Look into the TASK_CARD's "Known shortcuts and leakage risks"; if we find one, show the gap reproducibly, propose a fix and note when the fix could wrongly flag honest submissions |
-| Contributions and AI use | Describe his own contributions and AI use | Write the contributions statement and the AI-use disclosure (tools used, what for, how we checked the output) |
+| Model (`solution/rv_v2.py`) | Iterate on the improvement switches: `jitter_fit`, `bound_penalty`, `yearly_aliases`, `occam_mode="pk"` on top of `occam_weight=0.5`; try a train-label prior on P and K for the sparse regime | — |
+| Ablations and confirmation | Run `tools/ablate_v2.py` / `tools/confirm_v2.py` on held-out TRAIN stars | — |
+| Theoretical-best numbers and figures | **Before 4:00 (GPU access ends):** run `headroom.py` on the GPU box on the validation predictions of the baseline and the final model; copy the JSON files to the laptop | **1.** Get the `headroom.py` JSON files from Zach before 4:00. Write the plotting script and save `report/figs/success_vs_ceiling.pdf` and `report/figs/failure_breakdown.pdf` |
+| Experiment log | Add each run to `report/EXPERIMENT_LOG.md` (what changed, why, result, decision) | — |
+| Packaging and uploads | Build the ZIP with `tools/package_v2.py`; upload a safe first model early, then the final one; leave ≥3 min between uploads; send Prisha the submission ID and SHA-256 after each upload | **2.** Before each upload, go through the pre-upload checklist in `report/SUBMISSIONS.md` with Zach. After each upload, record the submission ID, SHA-256, git commit and score there |
+| Report (`report/main.tex`, ≤4 pages) | Fill in the ZACH placeholders (`grep -n 'fillin{ZACH' report/main.tex`): the method paragraph, the decision-trail rows and his contributions | **3.** Write §1 (goal and hypothesis), Insight 2 (the proxy-set finding: Occam's gain on train-derived sets shrank on validation, and the old sparse proxy covered spans ~4.5% too long; see R04 and R05), §5 (limitations) and §6 (reproducibility, contributions, AI use). Throughout, call validation the "held-out check" and the leaderboard the "hidden test", and keep the statement that we simulated no stars |
+| Final report | Review the full draft after the model freeze | **4.** At model freeze: put in the final numbers and the binding details (submission ID, SHA-256, commit); write the abstract and title last; check the body fits in 4 pages and the PDF is under 10 MiB; upload the PDF at https://submit.siderius.scitra.org/track2/reports, linked to the final submission ID |
 
 Both of us write the report's core arguments ourselves (AI may only organize and proofread).
 
@@ -25,12 +24,13 @@ Both of us write the report's core arguments ourselves (AI may only organize and
 
 | When | What |
 |---|---|
-| Start | `git pull`; Prisha has the baseline vs. `rv_v2` numbers by regime |
-| First upload | Safe model uploaded; Prisha's check passed; submission ID logged |
+| Each upload | Prisha's checklist passed → Zach uploads → submission ID, SHA-256 and commit logged in `report/SUBMISSIONS.md` |
+| ~3:30 | Zach has run `headroom.py` and copied the JSON files to the laptop; Prisha builds the figures |
 | Model freeze | Final model chosen and uploaded; numbers final |
 | After freeze | Both edit the report; Prisha uploads the PDF before the report deadline |
 
 ## Rules to keep in mind
 - Tune only on `data/exo/train/`. `val/` is only for a one-time check (`tools/score_val.py`), never for tuning.
 - No new pip installs; numpy and scipy only in the plugin; `kind: "algorithm"`, with no weight files.
-- Shared upload budget: 10 accepted uploads (the guide says 5; plan for 5). An upload that fails evaluation still counts.
+- 10 accepted uploads per team; an upload that fails evaluation still counts.
+- No access code, API key or GPU IP in any committed file, the report or the ZIP.
