@@ -343,17 +343,20 @@ def predict(inputs: np.ndarray, n_workers: int = N_WORKERS) -> np.ndarray:
                     mod = types.ModuleType(__name__)
                     mod.__dict__.update(globals())
                     sys.modules[__name__] = mod
-                ctx, fn = multiprocessing.get_context("fork"), _fit_one
+                ctx, fn, init = multiprocessing.get_context("fork"), _fit_one, _worker_init
             else:
                 import importlib
                 here = os.path.dirname(os.path.abspath(__file__))
                 if here not in sys.path:
                     sys.path.insert(0, here)
-                fn = importlib.import_module(os.path.splitext(os.path.basename(__file__))[0])._fit_one
+                _m = importlib.import_module(os.path.splitext(os.path.basename(__file__))[0])
+                fn, init = _m._fit_one, _m._worker_init
                 ctx = multiprocessing.get_context("spawn")
-            with ProcessPoolExecutor(max_workers=int(n_workers), mp_context=ctx, initializer=_worker_init) as ex:
+            with ProcessPoolExecutor(max_workers=int(n_workers), mp_context=ctx, initializer=init) as ex:
                 out = list(ex.map(fn, args, chunksize=max(1, len(X) // (8 * int(n_workers)))))
-        except Exception:
+        except Exception as exc:  # never fail scoring; but say so
+            import sys as _sys
+            print(f"[rv] parallel predict failed ({exc!r}); running serially", file=_sys.stderr)
             out = None
     if out is None:
         out = [_fit_one(a) for a in args]

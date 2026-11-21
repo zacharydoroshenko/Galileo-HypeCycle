@@ -370,17 +370,18 @@ def _parallel(X, n_workers):
             mod = types.ModuleType(__name__)
             mod.__dict__.update(globals())
             sys.modules[__name__] = mod
-        ctx, fn = mp.get_context("fork"), _fit_one
+        ctx, fn, init = mp.get_context("fork"), _fit_one, _worker_init
     else:
         import importlib
         import os
         here = os.path.dirname(os.path.abspath(__file__))
         if here not in sys.path:
             sys.path.insert(0, here)
-        fn = importlib.import_module(os.path.splitext(os.path.basename(__file__))[0])._fit_one
+        _m = importlib.import_module(os.path.splitext(os.path.basename(__file__))[0])
+        fn, init = _m._fit_one, _m._worker_init
         ctx = mp.get_context("spawn")
     from concurrent.futures import ProcessPoolExecutor  # raises (no hang) if workers die
-    with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx, initializer=_worker_init) as ex:
+    with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx, initializer=init) as ex:
         return list(ex.map(fn, args, chunksize=chunk))
 
 
@@ -390,7 +391,9 @@ def predict(X, n_workers: int = 1):
     if n_workers and n_workers > 1 and len(X) > 1:
         try:
             out = _parallel(X, int(n_workers))
-        except Exception:
+        except Exception as exc:  # never fail scoring; but say so
+            import sys as _sys
+            print(f"[rv] parallel predict failed ({exc!r}); running serially", file=_sys.stderr)
             out = None
     if out is None:
         out = [_fit_one((x, CONFIG)) for x in X]
