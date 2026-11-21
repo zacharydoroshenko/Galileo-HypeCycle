@@ -15,6 +15,10 @@ The task: recover the orbit of a single planet (P, K, e) from sparse radial-velo
 | `tools/inspect_data.py` | run first on the real data to determine the channel layout, units, and label ranges |
 | `tools/synth.py` | synthetic generator (standard / eccentric / sparse) for stress tests |
 | `tools/evaluate.py` | local mirror of the metric plus a failure breakdown (harmonic vs other P misses, K misses) |
+| `tools/diagnose.py` | per-star: search failure (true orbit fits better but we didn't find it) vs unidentifiable (low SNR) vs ambiguous. **Run on real train first** to decide where effort goes |
+| `tools/candidate_recall.py` | share of stars whose true P is in the candidate list (search recall before fitting) |
+| `tools/test_prior.py` | A/B of the learned (log P, log K) prior weight |
+| `tools/check_parallel.py` | 40 s check: pool == serial, tuned CONFIG reaches workers, no crashes |
 | `tools/package.py` | stage, rerun `train_command` in a fresh dir, smoke test, then zip with `submission.json` at the root |
 
 ## Synthetic baseline (pre-data, 80 stars each)
@@ -24,6 +28,17 @@ The task: recover the orbit of a single planet (P, K, e) from sparse radial-velo
 | eccentric (e 0.6–0.92) | 0.36 | 0.58 | 0.39 |
 | sparse (8–15 obs) | 0.33 | 0.41 | 0.49 |
 Speed is about 2 CPU-s per star, so roughly 10k stars fit in the scoring limit with 14 workers.
+
+### Findings since (60–80 synthetic stars each, so differences of ±1–2 stars are noise)
+- **Diagnosis:** on standard stars, all misses are unidentifiable (median SNR ~1.7). There are no search failures, so better searching won't help there. On eccentric stars, 15% are search failures.
+- **Keplerian periodogram** (`kep_on`, a scan with eccentric templates): candidate recall on eccentric stars goes from 66% to 79% and P-correct from 52% to 65%. Success is about flat (35→37% eccentric, 38→37% sparse, 60→60% standard) because K misses dominate. Cost is about 3×. On by default because it targets the eccentric test set; `train.py` can switch it off.
+- **Learned (log P, log K) prior** (`prior_weight`): no effect on synthetic data, which is expected because synth labels are log-uniform. Default 0; `train.py` tunes it on the real labels. Deliberately **no prior on e**, because the test set is more eccentric than training.
+- Finer (P, e, phase) grids gave no gain at 2–4× the cost.
+- **The remaining big lever is K for eccentric orbits.** Candidates are P-right/K-wrong when no point samples periastron.
+
+### Engineering notes
+- `true_anomaly_table` replaces Kepler solves in the grid stages (max error 5e-4 rad), giving a 1.6× speedup. The polish step uses exact solves.
+- Pool: `fork` on Linux (sandbox), `spawn` on macOS (fork crashes Accelerate-linked children), and `ProcessPoolExecutor` so dead workers raise instead of hanging. Any failure falls back to serial. CONFIG is shipped with each task.
 
 ## Setup
 ```sh
@@ -54,6 +69,8 @@ uv venv -p 3.12 .venv && uv pip install -p .venv numpy scipy pandas h5py matplot
 ```sh
 python tools/package.py --data_dir ~/work/exoplanet-orbits/data/train   # full tune (~minutes)
 python tools/package.py --data_dir ... --quick                          # pipeline check only
+# train.py: builds the prior from ALL train labels, then coordinate-wise tunes
+# prior_weight, kep_on, e_penalty, n_peaks on --n_tune stars (budget 2400 s)
 ```
 Before uploading, compare `build/submission/submission.json` against TASK_CARD.md. The manifest follows the guide's algorithm form:
 `kind: algorithm, seed: 0, initial_artifact, plugin, train_command, train_dir` (no weights).

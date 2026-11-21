@@ -56,6 +56,22 @@ def load_train(data_dir: Path):
     raise FileNotFoundError(f"no recognised train files in {data_dir}: {os.listdir(data_dir)}")
 
 
+def build_prior(Y, n_bins=24, alpha=0.5):
+    """Smoothed 2-D histogram of TRAIN (log10 P, log10 K) -> log density table + edges."""
+    lp, lk = Y[:, 0], Y[:, 1]
+    pad_p, pad_k = 0.1 * np.ptp(lp) + 0.05, 0.1 * np.ptp(lk) + 0.05
+    ep = np.linspace(lp.min() - pad_p, lp.max() + pad_p, n_bins + 1)
+    ek = np.linspace(lk.min() - pad_k, lk.max() + pad_k, n_bins + 1)
+    H, _, _ = np.histogram2d(lp, lk, bins=[ep, ek])
+    k = np.array([0.25, 0.5, 0.25])  # light separable blur
+    for ax in (0, 1):
+        H = np.apply_along_axis(lambda v: np.convolve(np.pad(v, 1, mode="edge"), k, "valid"), ax, H)
+    H = H + alpha
+    dens = H / (H.sum() * np.diff(ep)[0] * np.diff(ek)[0])
+    return {"prior_lp_edges": np.round(ep, 4).tolist(), "prior_lk_edges": np.round(ek, 4).tolist(),
+            "prior_logpdf": np.round(np.log(dens), 3).tolist()}
+
+
 def score(mod, X, Y, cfg, workers):
     mod.CONFIG.update(cfg)
     pred = mod.predict(X, n_workers=workers)
@@ -85,25 +101,33 @@ def main():
     best_cfg, best = dict(base), None
     log = []
 
+    X, Y = load_train(a.data_dir)
+    base.update(build_prior(Y))            # prior from ALL train labels (cheap, legitimate)
+    best_cfg = dict(base)
     if not a.no_tune:
-        X, Y = load_train(a.data_dir)
         idx = rng.choice(len(X), size=min(a.n_tune, len(X)), replace=False)
-        X, Y = X[idx], Y[idx]
-        # Small search space: extend once you know what helps (keep it inside the 3600 s retrain limit).
+        Xt, Yt = X[idx], Y[idx]
+        # Coordinate-wise search (keeps the retrain inside the 3600 s limit). First value = default.
         space = {
+            "prior_weight": [0.0, 0.5, 1.0, 2.0],
+            "kep_on": [True, False],
             "e_penalty": [0.0, 1.0, 3.0],
             "n_peaks": [6, 10],
         }
         t0 = time.time()
-        for vals in itertools.product(*space.values()):
-            if time.time() - t0 > a.budget_s:
-                break
-            cfg = dict(base, **dict(zip(space, vals)))
-            s = score(mod, X, Y, cfg, a.workers)
-            log.append({"cfg": dict(zip(space, vals)), "train_success": s})
-            print(json.dumps(log[-1]), flush=True)
-            if best is None or s > best:
-                best, best_cfg = s, cfg
+        best = score(mod, Xt, Yt, best_cfg, a.workers)
+        log.append({"cfg": "base", "train_success": best})
+        print(json.dumps(log[-1]), flush=True)
+        for key, values in space.items():
+            for v in values:
+                if v == best_cfg.get(key) or time.time() - t0 > a.budget_s:
+                    continue
+                cfg = dict(best_cfg, **{key: v})
+                sc = score(mod, Xt, Yt, cfg, a.workers)
+                log.append({"cfg": {key: v}, "train_success": sc})
+                print(json.dumps(log[-1]), flush=True)
+                if sc > best:
+                    best, best_cfg = sc, cfg
 
     src = template.read_text()
     new_cfg = "CONFIG = {\n" + "".join(f"    {k!r}: {v!r},\n" for k, v in best_cfg.items()) + "}\n"

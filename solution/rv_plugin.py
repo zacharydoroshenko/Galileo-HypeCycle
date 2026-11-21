@@ -43,6 +43,18 @@ CONFIG = {
     "p_local": 7,          # local period refinements per candidate
     "p_local_width": 0.5,  # +/- fraction of a peak width (1/baseline) in frequency
     "n_polish": 3,         # candidates kept for nonlinear polish
+    # Keplerian periodogram (finds eccentric planets that GLS misses)
+    "kep_on": True,
+    "kep_oversample": 3.0,
+    "kep_e": (0.5, 0.75, 0.9),
+    "kep_phase": 16,
+    "kep_peaks": 5,
+    # (log10 P, log10 K) prior learned from TRAIN labels by train/train.py; None = flat.
+    # Deliberately no prior on e: the test set is more eccentric than training.
+    "prior_weight": 0.0,
+    "prior_lp_edges": None,
+    "prior_lk_edges": None,
+    "prior_logpdf": None,
     # model selection
     "e_penalty": 0.0,      # added to neg-log-likelihood * e^2 (shrinks spurious high e)
     "jitter_init": 3.0,    # m/s
@@ -80,6 +92,32 @@ def kepler_E(M: np.ndarray, e: np.ndarray, n_iter: int = 12) -> np.ndarray:
 def true_anomaly(M, e):
     E = kepler_E(M, e)
     return 2.0 * np.arctan2(np.sqrt(1 + e) * np.sin(E / 2), np.sqrt(1 - e) * np.cos(E / 2))
+
+
+_NU_TABLE = {}
+_NU_N = 8192
+
+
+def true_anomaly_table(M, e_values):
+    """Fast nu(M, e) for a fixed set of e by linear interpolation in a cached table.
+    M: [G, n], e_values: [G] (each row uses its own e). Coarse-grid use only."""
+    key = tuple(np.round(np.unique(e_values), 10))
+    tab = _NU_TABLE.get(key)
+    if tab is None:
+        grid = np.linspace(0, 2 * np.pi, _NU_N + 1)
+        es = np.array(key)
+        nu = np.unwrap(np.mod(true_anomaly(grid[None, :], es[:, None]), 2 * np.pi), axis=1)
+        tab = (es, nu)
+        _NU_TABLE[key] = tab
+    es, nu = tab
+    ie = np.searchsorted(es, np.round(e_values, 10))
+    u = np.mod(M, 2 * np.pi) * (_NU_N / (2 * np.pi))
+    i0 = np.minimum(u.astype(np.int64), _NU_N - 1)
+    fr = u - i0
+    rows = nu[ie]                                     # [G, N+1]
+    a = np.take_along_axis(rows, i0, 1)
+    b = np.take_along_axis(rows, i0 + 1, 1)
+    return a + fr * (b - a)
 
 
 def rv_model(t, P, K, e, w, M0, gamma):
@@ -123,6 +161,41 @@ def freq_grid(t, cfg):
     return np.linspace(fmin, fmax, max(n, 100)), T
 
 
+def kepler_periodogram(t, y, s, cfg, jitter):
+    """Coarse chi2 scan over the full frequency range with eccentric templates.
+    Returns the frequencies of the best (separated) minima."""
+    T = max(t.max() - t.min(), 1.0)
+    p_max = min(cfg["p_max_factor"] * T, cfg["p_max_abs"])
+    fmin, fmax = 1.0 / p_max, 1.0 / cfg["p_min"]
+    n = int(min((fmax - fmin) * T * cfg["kep_oversample"], 60_000))
+    freqs = np.linspace(fmin, fmax, max(n, 50))
+    es = np.asarray(cfg["kep_e"], float)
+    M0s = np.linspace(0, 2 * np.pi, cfg["kep_phase"], endpoint=False)
+    EE, MM = np.meshgrid(es, M0s, indexing="ij")
+    EE, MM = EE.ravel(), MM.ravel()                    # [G]
+    wts = 1.0 / (s**2 + jitter**2)
+    best = np.empty(len(freqs))
+    chunk = max(1, 20000 // len(EE))
+    for i in range(0, len(freqs), chunk):
+        f = freqs[i:i + chunk]
+        M = (2 * np.pi * f[:, None, None] * t[None, None, :] + MM[None, :, None])  # [F, G, n]
+        F, G, nn = M.shape
+        Mf = M.reshape(F * G, nn)
+        ef = np.tile(EE, F)
+        nu = true_anomaly_table(Mf, ef)
+        _, chi2 = _linear_solve(nu, ef[:, None], y[None, :], wts[None, :])
+        best[i:i + chunk] = chi2.reshape(F, G).min(1)
+    lm = np.where((best[1:-1] < best[:-2]) & (best[1:-1] <= best[2:]))[0] + 1
+    lm = lm[np.argsort(best[lm])]
+    out = []
+    for j in lm:
+        if all(abs(freqs[j] - g) > 1.0 / T for g in out):
+            out.append(freqs[j])
+        if len(out) >= cfg["kep_peaks"]:
+            break
+    return out
+
+
 def candidate_periods(t, y, s, cfg):
     freqs, T = freq_grid(t, cfg)
     pw = gls(t, y, s, freqs)
@@ -144,6 +217,8 @@ def candidate_periods(t, y, s, cfg):
     if cfg["add_harmonics"]:
         for f in fs[:2]:
             out += [f / 2, f / 3, 2 * f]
+    if cfg.get("kep_on", False):
+        out += kepler_periodogram(t, y, s, cfg, cfg["jitter_init"])
     fmin, fmax = freqs[0], freqs[-1]
     out = [f for f in out if fmin * 0.5 <= f <= fmax * 1.05 and f > 0]
     # dedupe in frequency
@@ -187,7 +262,7 @@ def grid_fit(t, y, s, P0, T, cfg, jitter):
     PP, EE, MM = np.meshgrid(Ps, es, M0s, indexing="ij")
     PP, EE, MM = PP.ravel(), EE.ravel(), MM.ravel()
     M = 2 * np.pi * t[None, :] / PP[:, None] + MM[:, None]
-    nu = true_anomaly(M, EE[:, None])
+    nu = true_anomaly_table(M, EE)
     _, chi2 = _linear_solve(nu, EE[:, None], y[None, :], wts[None, :])
     k = int(np.argmin(chi2))
     return PP[k], EE[k], MM[k], chi2[k]
@@ -223,6 +298,18 @@ def polish(t, y, s, P, e, M0, jitter, cfg):
     return dict(P=P_, e=e_, M0=M_, jitter=j_, K=float(K), score=v + cfg["e_penalty"] * e_**2)
 
 
+def log_prior(P, K, cfg):
+    """Smoothed 2-D histogram log-density of (log10 P, log10 K); outside the range -> lowest bin."""
+    if cfg.get("prior_logpdf") is None or cfg.get("prior_weight", 0.0) == 0.0:
+        return 0.0
+    lp_e = np.asarray(cfg["prior_lp_edges"])
+    lk_e = np.asarray(cfg["prior_lk_edges"])
+    tab = np.asarray(cfg["prior_logpdf"])
+    i = int(np.clip(np.searchsorted(lp_e, math.log10(max(P, 1e-9))) - 1, 0, tab.shape[0] - 1))
+    j = int(np.clip(np.searchsorted(lk_e, math.log10(max(K, 1e-9))) - 1, 0, tab.shape[1] - 1))
+    return float(tab[i, j])
+
+
 def fit_star(x, cfg=CONFIG):
     t, y, s = parse_star(x, cfg)
     if len(t) < 4:
@@ -236,8 +323,10 @@ def fit_star(x, cfg=CONFIG):
         coarse.append((chi2, P, e, M0))
     coarse.sort(key=lambda z: z[0])
     best = None
+    w = cfg.get("prior_weight", 0.0)
     for _, P, e, M0 in coarse[: cfg["n_polish"]]:
         r = polish(t, y, s, P, e, M0, jit, cfg)
+        r["score"] -= w * log_prior(r["P"], r["K"], cfg)
         if best is None or r["score"] < best["score"]:
             best = r
     out = np.array([math.log10(best["P"]), math.log10(max(best["K"], 1e-3)),
@@ -247,29 +336,52 @@ def fit_star(x, cfg=CONFIG):
     return out, best
 
 
-def _fit_one(x):
+def _fit_one(arg):
+    x, cfg = arg
     try:
-        return fit_star(x)[0]
+        return fit_star(x, cfg)[0]
     except Exception:  # never let one star kill the batch
         return np.array([1.0, 1.0, 0.1])
 
 
+def _worker_init():
+    try:
+        from threadpoolctl import threadpool_limits
+        threadpool_limits(1)
+    except Exception:
+        pass
+
+
 def _parallel(X, n_workers):
-    """Fork-based pool. The evaluator may load this file via importlib without registering
-    it in sys.modules, which breaks pickling of _fit_one; register it, and use 'fork' so
-    children inherit it. Any failure -> caller falls back to serial."""
+    """Process pool. Linux (the scoring sandbox): 'fork'; the evaluator may load this file via
+    importlib without registering it in sys.modules, so we register it for pickling.
+    macOS: fork crashes Accelerate-linked children, so use 'spawn' and import this file by its
+    stem from its own directory. CONFIG is shipped with every task, so tuned values reach
+    workers either way. Any failure -> caller falls back to serial."""
     import multiprocessing as mp
     import sys
 
-    mod = sys.modules.get(__name__)
-    if mod is None or getattr(mod, "_fit_one", None) is not _fit_one:
-        import types
-        mod = types.ModuleType(__name__)
-        mod.__dict__.update(globals())
-        sys.modules[__name__] = mod
-    ctx = mp.get_context("fork")
-    with ctx.Pool(processes=n_workers) as pool:
-        return pool.map(_fit_one, list(X), chunksize=max(1, len(X) // (8 * n_workers)))
+    args = [(x, dict(CONFIG)) for x in X]
+    chunk = max(1, len(X) // (8 * n_workers))
+    if sys.platform.startswith("linux"):
+        mod = sys.modules.get(__name__)
+        if mod is None or getattr(mod, "_fit_one", None) is not _fit_one:
+            import types
+            mod = types.ModuleType(__name__)
+            mod.__dict__.update(globals())
+            sys.modules[__name__] = mod
+        ctx, fn = mp.get_context("fork"), _fit_one
+    else:
+        import importlib
+        import os
+        here = os.path.dirname(os.path.abspath(__file__))
+        if here not in sys.path:
+            sys.path.insert(0, here)
+        fn = importlib.import_module(os.path.splitext(os.path.basename(__file__))[0])._fit_one
+        ctx = mp.get_context("spawn")
+    from concurrent.futures import ProcessPoolExecutor  # raises (no hang) if workers die
+    with ProcessPoolExecutor(max_workers=n_workers, mp_context=ctx, initializer=_worker_init) as ex:
+        return list(ex.map(fn, args, chunksize=chunk))
 
 
 def predict(X, n_workers: int = 1):
@@ -281,7 +393,7 @@ def predict(X, n_workers: int = 1):
         except Exception:
             out = None
     if out is None:
-        out = [_fit_one(x) for x in X]
+        out = [_fit_one((x, CONFIG)) for x in X]
     out = np.stack(out).astype(np.float64)
     # validity guard: scorer rejects non-finite / all-identical predictions
     out[~np.isfinite(out)] = 0.5
