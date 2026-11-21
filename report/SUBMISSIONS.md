@@ -13,7 +13,7 @@ Checksum: `shasum -a 256 <zip>`. The report must cite the final row's submission
 | 4 | | | | | | | | |
 | 5 | | | | | | | | |
 
-**Final model for the report:** # 1 (submission ID 16)   **Report PDF uploaded:** ___ (linked to submission ID ___)
+**Final model for the report:** # 1 (submission ID 16). Late experiments R14–R17 found no replicated improvement, so no further uploads (4 unused).   **Report PDF uploaded:** ___ (linked to submission ID ___)
 
 ## Pre-upload checklist (Prisha)
 - [ ] `python -m json.tool submission.json` passes; `kind: algorithm`, `seed`, `initial_artifact`, `plugin`, `train_command`, `train_dir` all present
