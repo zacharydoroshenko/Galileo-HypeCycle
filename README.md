@@ -40,11 +40,20 @@ Speed is about 2 CPU-s per star, so roughly 10k stars fit in the scoring limit w
 - `true_anomaly_table` replaces Kepler solves in the grid stages (max error 5e-4 rad), giving a 1.6× speedup. The polish step uses exact solves.
 - Pool: `fork` on Linux (sandbox), `spawn` on macOS (fork crashes Accelerate-linked children), and `ProcessPoolExecutor` so dead workers raise instead of hanging. Any failure falls back to serial. CONFIG is shipped with each task.
 
-## Setup
+## Setup (new teammate: run these three lines)
 ```sh
-uv venv -p 3.12 .venv && uv pip install -p .venv numpy scipy pandas h5py matplotlib scikit-learn
-.venv/bin/python tools/evaluate.py --synth standard --n 80
+uv venv -p 3.12 .venv && uv pip install -p .venv numpy scipy pandas h5py matplotlib scikit-learn threadpoolctl
+.venv/bin/python tools/get_data.py      # task package + Zenodo data, checksum-verified (~50 MB, not in git)
+.venv/bin/python tools/evaluate.py --data data/exo/train_sub300.npz --n 300 --workers 8
 ```
+`get_data.py` creates `package_exo/` (TASK_CARD.md, baseline, simulator, metric plugins, official example
+submission) and `data/exo/{train,val}/` with the official file names. **Tune only on `data/exo/train/`.**
+`val/` is for checking only: the task rules forbid tuning on it, and generating extra stars with the
+simulator is outside the intended rules.
+
+Official baseline (TASK_CARD): validation success 0.4715 (in-dist 0.5975, high_ecc 0.316, sparse 0.375),
+0.24 CPU-s/star. The information ceiling is 0.536, so headroom is small; see TASK_CARD "Difficulty".
+On our 300-star train subset the baseline scores 0.593.
 
 ## Run sheet for challenge day
 **11:45–1:00 (onboarding)**: SSH in, `source /opt/siderius/.venv/bin/activate`, clone this repo onto the GPU box, check that the OpenAI key works.

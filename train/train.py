@@ -35,6 +35,8 @@ def load_train(data_dir: Path):
     """Return X [N,4,60], Y [N,3]. EDIT ME once the real file layout is known (see TASK_CARD.md).
     Tries common layouts: *.npz with X/Y, *.npy pairs, *.h5."""
     data_dir = Path(data_dir)
+    if (data_dir / "train_inputs.npy").exists():  # official exoplanet-orbits layout
+        return np.load(data_dir / "train_inputs.npy"), np.load(data_dir / "train_targets.npy")
     npz = sorted(data_dir.glob("*train*.npz")) or sorted(data_dir.glob("*.npz"))
     if npz:
         d = np.load(npz[0])

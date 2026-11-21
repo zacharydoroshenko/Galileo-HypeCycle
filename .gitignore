@@ -6,3 +6,4 @@ build/
 data/
 *.zip
 .env
+package_exo/
