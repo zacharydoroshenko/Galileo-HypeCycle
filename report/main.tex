@@ -68,15 +68,12 @@ signal; nightly and seasonal sampling create daily and yearly
 \emph{aliases}, false periods that fit as well as the true one; and eccentric
 spikes are easily missed by sparse sampling.
 
-\textbf{Task facts (from the official task card, \texttt{TASK\_CARD.md} in the task package~\cite{galileo2026}).} Input: up to 60 observations per star
-(time, RV, reported error, mask). Output: $[\log_{10}P, \log_{10}K, e]$.
+\textbf{Task facts (from the official task card, \texttt{TASK\_CARD.md} in the task package~\cite{galileo2026}).}
 Metric: \texttt{success\_rate} (higher is better), the share of stars with
 $|P_\text{pred}/P_\text{true}-1|<1\%$ and $|K_\text{pred}/K_\text{true}-1|<10\%$;
-$e$ is not scored. Groups: in-distribution, high eccentricity
-($e$ 0.6--0.9, beyond the training range), and sparse (15 observations).
-The official baseline scores 0.4715 on validation; the per-star Fisher
-(Cram\'er--Rao) information ceiling is 0.536, and a perfect period search with
-the baseline likelihood would reach only 0.479.
+$e$ is not scored. Test groups: in-distribution, high eccentricity
+($e$ 0.6--0.9, beyond the training range), and sparse (15 observations
+instead of 30--60). The official baseline scores 0.4715 on validation.
 
 \textbf{Why a high success rate is out of reach.}
 % Facts with sources (TASK_CARD "Data" and "Difficulty", official analysis/headroom.py,
@@ -270,48 +267,28 @@ simulated stars; validation used once as a check. Code and complete logs:
 \url{https://github.com/zacharydoroshenko/Galileo-HypeCycle} at commit 5c1a5b9 (submitted code; later commits add analysis only).
 \fillin{PRISHA}{list any evidence that is unavailable}
 
-\textbf{Contributions.} Zachary Doroshenko: \fillin{ZACH}{}.
-Prisha Maiti: \fillin{PRISHA}{}.
+\textbf{Contributions.} Zachary Doroshenko: solver and all experiments
+(ablations, paired confirmations, proxy sets, $K$-bias calibration, late
+replications), official \texttt{headroom.py} analysis on the GPU machine,
+packaging and uploads, method and decision-trail text.
+% ZACH: confirm or edit your line.
+Prisha Maiti: problem overview and team work plan, organizer coordination
+(deadlines, upload budget, scoring rules), submission record and
+pre-upload checks, figures, and report structure and writing (goal,
+hypothesis, trajectory, information limit, captions). Both: hypotheses,
+insights and limitations.
 
-\textbf{AI use.} \fillin{BOTH}{Which tools (Claude Code as coding agent; we did
-/ did not use SIDERIUS capability calls), what they did (code, data analysis
-scripts, organising logs, proofreading), and how outputs were verified
-(metric reproduces the official baseline to 4 decimals; paired tests on
-held-out train stars; local packaging checks). State that the hypotheses,
-insights and limitations are our own.}
-
-% OPTIONAL: delete this entire section if we do not find a reproducible loophole.
-% It counts toward the four-page body.
-\section*{Optional: Reward hacking discovery}
-% FACTS (results/loophole_demo.json, tools/loophole_demo.py; LOCAL ONLY, never uploaded). Explanation, fix and
-% false-positive discussion must be written by us (README: "Your team writes ... loophole explanations").
-%  - e is not in the success criterion: replacing every e by 0.1 leaves success unchanged and passes all health gates,
-%    while median |de| rises 0.059 -> 0.152 on validation; in the high_ecc group 0.065 -> 0.648 (10x), in-dist 0.042 -> 0.089.
-%  - The K box |K'-K|/K < 0.1 is asymmetric in log space ([-0.0458, +0.0414] dex); K x 0.995 recentres it:
-%    +14/-10 on validation, +19/-13 on 6,000 train stars (n.s., +0.1 pt). It cannot explain our K-debias gain
-%    (+70/-39, and the threshold-free median rel K error also drops 0.0790 -> 0.0751).
-%  - Possible fixes: success criterion in log space |log K'/K| < log 1.1; an e-accuracy gate or e in the criterion.
-%    False positive to discuss: at low SNR e is genuinely unconstrained, so an e gate would penalise honest methods.
-\begin{table}[ht]
-\caption{Metric audit on validation (local; not a submitted model). The ``loophole'' variant changes no physics.}
-\centering\small
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-Predictions & Success & vs.\ final & Median $|\Delta e|$ & Median $|\Delta K|/K$ \\
-\midrule
-Final model (submission 16) & 0.4748 & -- & 0.059 & 0.0751 \\
-$e \to 0.1$ for every star & 0.4748 & +0/$-$0 & 0.152 & 0.0751 \\
-$K \to 0.995\,K$ (recentre box) & 0.4758 & +14/$-$10 & 0.059 & 0.0742 \\
-Both (``loophole model'') & 0.4758 & +14/$-$10 & 0.152 & 0.0742 \\
-\bottomrule
-\end{tabular}
-\end{table}
-\fillin{PRISHA}{Only if reproducible. Scientific goal vs metric incentive;
-triggering condition; minimal reproducible example; evidence that a high
-score coexists with scientific failure; proposed fix and its false positives.
-Leads from the task card: planet-free stars are never scored (false
-detections are free); public simulator can remove the out-of-distribution
-premise; sparse stars are identifiable from their 15-point mask.}
+\textbf{AI use.} Both of us used Claude Code as our coding agent. We did
+not use SIDERIUS or its capability calls, because our solution is a
+CPU-based fitting algorithm with no model to train. Claude Code helped
+write and debug the solver, evaluation and plotting scripts, organise the
+experiment logs, and turn our notes into formal report wording. The
+hypotheses, insights and limitations are our own. We verified its outputs
+by reproducing the official baseline to four decimals with our metric code,
+accepting changes only on paired tests on held-out train stars (with
+replication for late changes), checking packaging locally, and confirming
+that the organizers' scoring matched our runtime estimate (155\,s vs.\
+161\,s).
 
 % References may extend beyond the four-page body. Do not add narrative appendices.
 \clearpage
