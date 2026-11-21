@@ -7,11 +7,11 @@ Checksum: `shasum -a 256 <zip>`. The report must cite the final row's submission
 
 | # | Time uploaded | Submission ID | ZIP filename | SHA-256 | Git commit | Config | Status | Hidden-test score (overall / in-dist / high-e / sparse) |
 |---|---|---|---|---|---|---|---|---|
-| 1 | (pending) | (pending) | `upload2-v2-submission-220842.zip` (local name; built on GPU box as `v2-submission-220842.zip`) | `1a4b4e949e24dea461a470e697b774e4bce2ec0305c1fdf5fd6b17e808d2e662` | 5c1a5b9 | `occam_weight=0.5`, `k_debias_c=6.95` (validation check: 0.47475 / 0.6035 / 0.311 / 0.381) | | |
+| 1 | 14:25:38 PST (22:25:38Z) | **16** | `upload2-v2-submission-220842.zip` (local name; built on GPU box as `v2-submission-220842.zip`) | `1a4b4e949e24dea461a470e697b774e4bce2ec0305c1fdf5fd6b17e808d2e662` | 5c1a5b9 | `occam_weight=0.5`, `k_debias_c=6.95` (validation check: 0.47475 / 0.6035 / 0.311 / 0.381) | running (14:29) | |
 | 2 | | | | | | | | |
 | 3 | | | | | | | | |
 
-**Final model for the report:** # ___   **Report PDF uploaded:** ___ (linked to submission ID ___)
+**Final model for the report:** # 1 (submission ID 16)   **Report PDF uploaded:** ___ (linked to submission ID ___)
 
 ## Pre-upload checklist (Prisha)
 - [ ] `python -m json.tool submission.json` passes; `kind: algorithm`, `seed`, `initial_artifact`, `plugin`, `train_command`, `train_dir` all present
