@@ -68,7 +68,7 @@ signal; nightly and seasonal sampling create daily and yearly
 \emph{aliases}, false periods that fit as well as the true one; and eccentric
 spikes are easily missed by sparse sampling.
 
-\textbf{Task facts (from TASK\_CARD~\cite{galileo2026}).} Input: up to 60 observations per star
+\textbf{Task facts (from the official task card, \texttt{TASK\_CARD.md} in the task package~\cite{galileo2026}).} Input: up to 60 observations per star
 (time, RV, reported error, mask). Output: $[\log_{10}P, \log_{10}K, e]$.
 Metric: \texttt{success\_rate} (higher is better), the share of stars with
 $|P_\text{pred}/P_\text{true}-1|<1\%$ and $|K_\text{pred}/K_\text{true}-1|<10\%$;
@@ -95,7 +95,7 @@ of the time (our final model: 97.9\%). The mean is 0.536 overall (in-dist.\ 0.65
 sparse 0.472). Most alias failures are not search errors either: in only 7
 of the baseline's alias failures does the true orbit fit the data better
 than the baseline's answer, so the data genuinely prefer the alias at this
-noise level. A perfect period search adds only +0.0075 (TASK\_CARD) and
+noise level. A perfect period search adds only +0.0075 (task card) and
 +0.011 for our final model, and four search changes we tried moved 0 of
 1,000 stars (R07). Two caveats: the Fisher value is a \emph{benchmark}
 rather than a strict maximum. It is local (it assumes the right peak was
@@ -104,9 +104,13 @@ unbiased estimators (a biased estimator, such as our $K$ correction, can
 beat it on individual stars). Also, with 4,000 test stars one binomial
 standard error is $\approx$0.8 points, so differences between methods are
 small compared with the noise in a single score.
-\fillin{BOTH}{One or two sentences in our own words: what this means for how
-the score should be judged, and why we measure improvements with paired
-comparisons on the same stars.}
+In short, the noise in the data, not the method, caps the achievable
+score: an unbiased estimator that always finds the right orbit is expected
+to recover only about 54\% of the planets, so the headroom over the baseline
+is about 6 points. We therefore
+judge our changes by how much of that gap they close, and we measure them
+with paired comparisons on the same stars, which separate a real gain of a
+few stars from the sampling noise of a single score.
 
 \textbf{Initial hypothesis.} We expected period aliasing to be the main
 bottleneck: because the stars are observed only at night and only in
@@ -121,7 +125,7 @@ alias failures.
 \section{Research trajectory}
 % Owner: ZACH writes rows as runs finish; PRISHA keeps report/EXPERIMENT_LOG.md
 % in sync and writes the connecting prose.
-The evidence contradicted our initial hypothesis. The TASK\_CARD analysis
+The evidence contradicted our initial hypothesis. The task card's analysis
 showed that a perfect period search would add only +0.0075, and that in
 almost all alias failures the data genuinely prefer the alias; our own
 search changes later moved 0 of 1,000 stars (R07). The limiting factor is
@@ -145,7 +149,7 @@ Run ID & Why & Change & Result & Next decision \\
 \midrule
 R01 & Need an exact copy of the baseline to measure changes against; our own solver was $>$5$\times$ slower & Reimplement the official baseline as \texttt{rv\_v2} with all switches off &
   Matches published validation to 4 decimals (0.4715 / 0.5975 / 0.316 / 0.375) & Build every change as a switch on \texttt{rv\_v2} \\
-R02--03 & TASK\_CARD: a perfect search adds only +0.0075, so test candidate choice and noise model & Ablation of 5 switches on 300-star train proxies; paired confirmation of \texttt{occam\_weight=0.5} &
+R02--03 & Task card: a perfect search adds only +0.0075, so test candidate choice and noise model & Ablation of 5 switches on 300-star train proxies; paired confirmation of \texttt{occam\_weight=0.5} &
   Occam best (mean 0.493$\to$0.503, no extra cost); confirmed on held-out train stars: std +17/$-$5 ($p$=0.017), sparse15 +11/$-$0 ($p$=0.001) & Keep Occam 0.5; drop yearly, peaks5, bounds \\
 R04--05 & Sanity check before spending an upload & One-time validation check of Occam only; then a simulator-faithful sparse proxy (old proxy spans $\sim$4.5\% too long) &
   Validation gain far smaller than on proxies (in-dist +0.35, sparse +0.1, high-e $-$0.7 pts); faithful proxy reproduces the real sparse baseline exactly (0.375; old proxy 0.332) & Use the faithful proxy for all sparse decisions \\
@@ -299,7 +303,7 @@ Both (``loophole model'') & 0.4758 & +14/$-$10 & 0.152 & 0.0742 \\
 \fillin{PRISHA}{Only if reproducible. Scientific goal vs metric incentive;
 triggering condition; minimal reproducible example; evidence that a high
 score coexists with scientific failure; proposed fix and its false positives.
-Leads from the TASK\_CARD: planet-free stars are never scored (false
+Leads from the task card: planet-free stars are never scored (false
 detections are free); public simulator can remove the out-of-distribution
 premise; sparse stars are identifiable from their 15-point mask.}
 
