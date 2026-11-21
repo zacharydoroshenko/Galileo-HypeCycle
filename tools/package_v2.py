@@ -39,7 +39,8 @@ def stage():
     shutil.copy(src, STAGE / "initial_algorithm.py")
     shutil.copy(src, STAGE / "train" / "rv_v2_source.py")
     shutil.copy(ROOT / "train" / "train_v2.py", STAGE / "train" / "train_v2.py")
-    for f in ["confirm_v2.py", "ablate_v2.py", "make_eval_sets.py", "make_confirm_sets.py", "evaluate.py"]:
+    for f in ["confirm_v2.py", "ablate_v2.py", "make_eval_sets.py", "make_confirm_sets.py", "evaluate.py",
+              "make_sparse_v2.py", "make_calib_preds.py", "k_calib.py"]:
         shutil.copy(ROOT / "tools" / f, STAGE / "train" / "selection" / f)
     (STAGE / "submission.json").write_text(json.dumps(MANIFEST, indent=2) + "\n")
 
@@ -60,13 +61,16 @@ def smoke(plugin, data_dir):
     spec = importlib.util.spec_from_file_location("v2_smoke", plugin)
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
-    assert m.CONFIG["occam_weight"] == 0.5, m.CONFIG
+    sys.path.insert(0, str(ROOT / "train"))
+    from train_v2 import SELECTED
+    for k, v in SELECTED.items():
+        assert m.CONFIG[k] == v, (k, m.CONFIG[k], v)
     X = np.load(data_dir / "train_inputs.npy")[:32]
     p = m.predict(X, n_workers=4)
     assert p.shape == (32, 3) and np.all(np.isfinite(p)), "bad predictions"
     assert np.all((p[:, 2] >= 0) & (p[:, 2] < 1)), "e out of [0,1)"
     assert np.std(p[:, 0]) > 0.05, "period dispersion below health floor"
-    print("[smoke] OK, CONFIG:", {k: m.CONFIG[k] for k in ("occam_weight", "P_bounds", "K_bounds")})
+    print("[smoke] OK, CONFIG:", {k: m.CONFIG[k] for k in (*SELECTED, "P_bounds", "K_bounds")})
 
 
 def make_zip():

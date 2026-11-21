@@ -32,7 +32,19 @@ CONFIGS = {
     "pk0.5+ext+s5+jd": {"occam_weight": 0.5, "occam_mode": "pk", "e_grid_ext": True, "n_starts": 5,
                          "jitter_fit": True, "jitter_dof": True},
 }
+BATCH2 = {
+    "plain": {},
+    "occam0.5": {"occam_weight": 0.5},                                   # = upload #1
+    "kdb7": {"k_debias_c": 6.95},                                        # K-debias alone (c fitted on calib set)
+    "occ0.5+kdb7": {"occam_weight": 0.5, "k_debias_c": 6.95},
+    "occ0.5+kdb4": {"occam_weight": 0.5, "k_debias_c": 4.0},
+    "occ0.5+kdb10": {"occam_weight": 0.5, "k_debias_c": 10.0},
+    "occ0.25+kdb7": {"occam_weight": 0.25, "k_debias_c": 6.95},
+    "occ0.75+kdb7": {"occam_weight": 0.75, "k_debias_c": 6.95},
+    "occ0.5+kdb7+jd": {"occam_weight": 0.5, "k_debias_c": 6.95, "jitter_fit": True, "jitter_dof": True},
+}
 SETS = {"std1000": "confirm_std1000.npz", "sparse600": "confirm_sparse600.npz", "hiecc300": "train_hiecc300.npz"}
+SETS2 = {"std1000": "confirm_std1000.npz", "sparseV2": "confirm_sparse_v2_1000.npz", "hiecc300": "train_hiecc300.npz"}
 REFS = ("plain", "occam0.5")  # paired comparisons against the baseline rule and against upload #1
 
 
@@ -47,8 +59,12 @@ def sign_p(gain, loss):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--workers", type=int, default=8)
-    ap.add_argument("--configs", nargs="+", default=list(CONFIGS))
+    ap.add_argument("--configs", nargs="+")
+    ap.add_argument("--batch", type=int, default=1)
     a = ap.parse_args()
+    if a.batch == 2:
+        CONFIGS, SETS = BATCH2, SETS2
+    a.configs = a.configs or list(CONFIGS)
     import rv_v2
     from evaluate import success
     base = dict(rv_v2.CONFIG)

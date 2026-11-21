@@ -87,18 +87,31 @@ logs: \url{https://github.com/zacharydoroshenko/Galileo-HypeCycle}
 \toprule
 Run ID & Why & Change & Result & Next decision \\
 \midrule
+% NOTES FOR ZACH (facts from EXPERIMENT_LOG; write why/decision in your own words):
+%  R01 why: need an exact copy of the baseline to measure changes against; our own solver was >5x slower.
+%  R01 decision: build all changes as switches on rv_v2.
 R01 & \fillin{ZACH}{why} & Reimplement the official baseline as \texttt{rv\_v2} with all switches off &
   Matches published validation to 4 decimals (0.4715 / 0.5975 / 0.316 / 0.375) & \fillin{ZACH}{decision} \\
 R02 & \fillin{ZACH}{why} & Ablation of switches (jitter, occam, yearly, bounds, peaks5) on 300-star train proxies &
-  \fillin{ZACH}{numbers from \texttt{build/ablation.jsonl}} & \fillin{ZACH}{decision} \\
+  mean success: plain 0.493, occam 0.503 (no extra cost), jitter 0.498 (4.5$\times$ slower), yearly 0.493, peaks5 0.496 & \fillin{ZACH}{decision} \\
+% R02 notes: why = TASK_CARD says perfect search adds only +0.0075, so test selection/noise model; decision = confirm occam, drop yearly/peaks5/bounds.
 R03 & \fillin{ZACH}{why} & Paired confirmation of \texttt{occam\_weight=0.5} on held-out train stars &
   std 0.582$\to$0.594 (+17/$-$5, $p$=0.017); sparse15 0.330$\to$0.348 (+11/$-$0, $p$=0.001) & Upload \#1 \\
 R04 & \fillin{BOTH}{why} & Compare upload \#1 on validation (one-time check) &
   in-dist +0.35, sparse +0.1, high\_ecc $-$0.7 points: much smaller than on proxies & \fillin{BOTH}{decision} \\
 R05 & \fillin{ZACH}{why} & Simulator-faithful sparse proxy (\texttt{make\_sparse\_v2}); old proxy spans $\sim$4.5\% too long &
-  \fillin{ZACH}{result} & \fillin{ZACH}{decision} \\
+  Mean span 1,024\,d vs.\ 1,018\,d for real sparse (old proxy 1,064\,d); baseline scores 0.375 on it, identical to real validation sparse (old proxy 0.332) & \fillin{ZACH}{decision} \\
+% R05 notes: why = upload #1's sparse gain (+1.8 pts on proxy) did not transfer (+0.1 on val); decision = use the faithful proxy for all sparse decisions.
 R06 & \fillin{ZACH}{hypothesis: full-Jacobian Occam penalises sharp eccentric fits} & \texttt{occam\_mode="pk"} &
-  \fillin{ZACH}{result} & \fillin{ZACH}{decision} \\
+  Worse than full Occam: vs.\ upload \#1 std +2/$-$11 ($p$=0.02); high-e unchanged & \fillin{ZACH}{decision} \\
+% R06 notes: decision = hypothesis refuted; keep the full-Jacobian Occam term.
+R07 & \fillin{ZACH}{why} & Search changes: extra $e$=0.92 starts, 5 starts, wider window, 600 evaluations &
+  0 stars changed on 1,000 std stars for all four; sparse $\le$+2 & \fillin{ZACH}{decision} \\
+% R07 notes: why = high_ecc reaches e=0.9 > baseline grid max 0.85; decision = search is not the bottleneck, stop.
+R09 & \fillin{ZACH}{why} & K-bias correction $K/\sqrt{1+c/\mathrm{SNR}^2}$, $c$ fitted on 6,000 disjoint train stars &
+  low-SNR $K$ biased +0.04--0.05 dex; held-out: \fillin{ZACH}{final batch-2 numbers} & \fillin{ZACH}{decision} \\
+% R09 notes: why = 26% of baseline failures are P-right/K-wrong; ML K biased high at low SNR (E[K^2] ~ K^2 + c sig^2/N).
+%   evidence: half-B +54/-28; batch-2 occ0.5+kdb7 vs upload #1 std +16/-11, sparseV2 +5/-3, high-e +4/-6.
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -106,6 +119,13 @@ R06 & \fillin{ZACH}{hypothesis: full-Jacobian Occam penalises sharp eccentric fi
 % ===========================================================================
 \section{Final model \& comparisons}
 % Owner: ZACH (method paragraph), PRISHA (tables, figure, binding info)
+% NOTES FOR ZACH (method facts; write the paragraph yourself):
+%  - candidates: GLS periodogram (1/1500 to 1/0.9 c/d, step 1e-4), top-3 peaks + 1-day aliases |1-f| (baseline)
+%  - per candidate: grid of 396 (e, omega, M0) points, K and gamma solved by weighted linear LS; 3 best seed
+%    scipy least_squares on (lnP, lnK, sqrt(e)cos w, sqrt(e)sin w, M0, gamma), freq kept within +-1.5 peak widths
+%  - OURS: choose among fits by chi^2/2 + 0.5 * 0.5 * log det(J^T J) (Laplace/Occam factor, weight 0.5 chosen on train)
+%  - OURS (if kept): K_out = K / sqrt(1 + c/SNR^2), SNR = K sqrt(N)/sig_eff, c fitted on train stars
+%  - kind=algorithm; train_command only bakes the settings (+P/K bounds read from train labels); 0.31 s/star, 161 s for 4,000 stars at 14 workers
 \fillin{ZACH}{Final method in 4--6 sentences: GLS periodogram candidates and
 1-day aliases; $(P,e,M_0)$ grid with exact linear solve for $K\cos\omega$,
 $K\sin\omega$, $\gamma$; least-squares polish; candidate choice by

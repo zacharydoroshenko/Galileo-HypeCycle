@@ -21,6 +21,8 @@ if __name__ == "__main__":
     ap.add_argument("--plugin", type=Path, required=True)
     ap.add_argument("--plain", action="store_true")
     ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--set", nargs="*", default=[], help="CONFIG overrides key=value (python literals)")
+    ap.add_argument("--save", type=Path, help="save predictions [N,3] .npy (for analysis/headroom.py)")
     a = ap.parse_args()
     v = ROOT / "data/exo/val"
     X, Y, G = (np.load(v / f"validation_{k}.npy") for k in ("inputs", "targets", "groups"))
@@ -34,11 +36,17 @@ if __name__ == "__main__":
     spec.loader.exec_module(mod)
     if a.plain:
         mod.CONFIG.update(jitter_fit=False, occam_weight=0.0, bound_penalty=0.0, yearly_aliases=False, n_peaks=3)
+    import ast
+    for kv in a.set:
+        k, v = kv.split("=", 1)
+        mod.CONFIG[k] = ast.literal_eval(v)
     t0 = time.time()
     p = mod.predict(X, n_workers=a.workers)
+    if a.save:
+        np.save(a.save, p)
     dt = time.time() - t0
     ok = success(p, Y.astype(float))[0]
-    res = {"plugin": str(a.plugin.name), "plain": a.plain, "success_rate": float(ok.mean()), "sec": dt}
+    res = {"plugin": str(a.plugin.name), "plain": a.plain, "overrides": a.set, "success_rate": float(ok.mean()), "sec": dt}
     for g, n in names.items():
         res[f"success_rate_{n}"] = float(ok[G == g].mean())
     res["median_abs_e_error"] = float(np.median(np.abs(p[:, 2] - Y[:, 2])))

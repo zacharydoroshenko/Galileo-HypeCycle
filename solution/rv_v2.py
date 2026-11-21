@@ -89,6 +89,8 @@ CONFIG = {
     "occam_weight_sparse": None,  # if set, occam weight used for stars with <= sparse_nobs observations
     "sparse_nobs": 20,
     "jitter_dof": False,       # ML jitter with N/(N-6) residual correction (less biased for few points)
+    "k_debias_c": 0.0,         # K_out = K / sqrt(1 + c / snr^2), snr = K sqrt(N) / sig_eff (low-SNR ML K bias)
+    "k_debias_floor": 0.5,
     "P_bounds": [1.0, 1000.0],   # overwritten from train labels by train/train.py
     "K_bounds": [2.0, 100.0],
 }
@@ -338,6 +340,11 @@ def fit_star(x_star: np.ndarray, cfg: dict | None = None) -> np.ndarray:
             if score < best_score:
                 best_score, best_x = score, x
     period, k_amp, e, _, _, _ = _unpack(best_x)
+    c = float(cfg.get("k_debias_c", 0.0))
+    if c > 0.0:
+        # ML amplitude is biased high at low SNR: E[K_hat^2] ~ K^2 + c sig_eff^2 / N. c is fitted on TRAIN stars.
+        snr2 = k_amp**2 * len(t) / float(np.mean(sig_eff**2))
+        k_amp = k_amp * max(1.0 / np.sqrt(1.0 + c / max(snr2, 1e-9)), float(cfg.get("k_debias_floor", 0.5)))
     return np.array([np.log10(period), np.log10(k_amp), float(np.clip(e, 0.0, E_MAX))])
 
 
