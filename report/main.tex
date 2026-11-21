@@ -53,9 +53,20 @@ submission ID.}
 % ===========================================================================
 \section{Scientific goal \& initial hypothesis}
 % Owner: PRISHA (drafts), ZACH (checks physics)
-\fillin{PRISHA}{Scientific objective beyond the leaderboard: what recovering
-$(P, K)$ from a few dozen night-time RV points means for exoplanet surveys.
-Define RV, $P$, $K$, $e$, aliasing, jitter in one or two sentences each.}
+An orbiting planet makes its star wobble around their common centre of
+mass; the radial-velocity (RV) method measures the star's line-of-sight
+velocity from the Doppler shift of its spectral lines, and remains the main
+way to measure planet masses. For one planet, the velocity follows a
+Keplerian curve set by the period $P$, the semi-amplitude $K$ (half the
+peak-to-peak swing) and the eccentricity $e$ (0 gives a sine wave; high $e$
+gives a brief spike at periastron), plus nuisance terms for orientation,
+phase and offset. The challenge~\cite{challenge} is the inverse problem:
+recover $P$, $K$ and $e$ from a few dozen noisy night-time measurements.
+It is hard because six parameters must be fitted from few points; the
+noise (reported errors plus unreported stellar jitter) is comparable to the
+signal; nightly and seasonal sampling create daily and yearly
+\emph{aliases}, false periods that fit as well as the true one; and eccentric
+spikes are easily missed by sparse sampling.
 
 \textbf{Task facts (from TASK\_CARD~\cite{galileo2026}).} Input: up to 60 observations per star
 (time, RV, reported error, mask). Output: $[\log_{10}P, \log_{10}K, e]$.
@@ -283,6 +294,9 @@ premise; sparse stars are identifiable from their 15-point mask.}
 \bibitem{galileo2026} Galileo Hackathon organizers. \texttt{exoplanet-orbits} task package (TASK\_CARD, simulator
 \texttt{generate\_rv\_data.py} v2, official baseline, \texttt{analysis/headroom.py}) and data. Zenodo,
 doi:10.5281/zenodo.24361910, 2026.
+\bibitem{challenge} Galileo Hackathon 2026. Recover exoplanet orbits from
+sparse radial-velocity data (Track~2 challenge \texttt{exoplanet-orbits}).
+\url{https://siderius.scitra.org/hackathon/challenges/exoplanet-orbits}.
 \bibitem{zechmeister2009} M.~Zechmeister and M.~K\"urster. The generalised
 Lomb--Scargle periodogram. \emph{A\&A} 496:577--584, 2009.
 \bibitem{dawson2010} R.~I.~Dawson and D.~C.~Fabrycky. Radial velocity planets de-aliased. \emph{ApJ} 722:937, 2010.
