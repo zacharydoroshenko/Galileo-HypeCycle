@@ -117,31 +117,18 @@ logs: \url{https://github.com/zacharydoroshenko/Galileo-HypeCycle}
 \toprule
 Run ID & Why & Change & Result & Next decision \\
 \midrule
-% NOTES FOR ZACH (facts from EXPERIMENT_LOG; write why/decision in your own words):
-%  R01 why: need an exact copy of the baseline to measure changes against; our own solver was >5x slower.
-%  R01 decision: build all changes as switches on rv_v2.
 R01 & Need an exact copy of the baseline to measure changes against; our own solver was $>$5$\times$ slower & Reimplement the official baseline as \texttt{rv\_v2} with all switches off &
   Matches published validation to 4 decimals (0.4715 / 0.5975 / 0.316 / 0.375) & Build every change as a switch on \texttt{rv\_v2} \\
-R02 & TASK\_CARD: a perfect search adds only +0.0075, so test candidate choice and noise model & Ablation of switches (jitter, occam, yearly, bounds, peaks5) on 300-star train proxies &
-  mean success: plain 0.493, occam 0.503 (no extra cost), jitter 0.498 (4.5$\times$ slower), yearly 0.493, peaks5 0.496 & Confirm Occam on larger sets; drop yearly, peaks5, bounds \\
-% R02 notes: why = TASK_CARD says perfect search adds only +0.0075, so test selection/noise model; decision = confirm occam, drop yearly/peaks5/bounds.
-R03 & Choose the weight; rule out 300-star noise & Paired confirmation of \texttt{occam\_weight=0.5} on held-out train stars &
-  std 0.582$\to$0.594 (+17/$-$5, $p$=0.017); sparse15 0.330$\to$0.348 (+11/$-$0, $p$=0.001) & Upload \#1 \\
-R04 & \fillin{BOTH}{why} & Check the Occam-only candidate on validation (one-time check) &
-  in-dist +0.35, sparse +0.1, high\_ecc $-$0.7 points: much smaller than on proxies & \fillin{BOTH}{decision} \\
-R05 & Occam's sparse gain on the proxy (+1.8 pts) did not transfer (+0.1 on validation) & Simulator-faithful sparse proxy (\texttt{make\_sparse\_v2}); old proxy spans $\sim$4.5\% too long &
-  Mean span 1,024\,d vs.\ 1,018\,d for real sparse (old proxy 1,064\,d); baseline scores 0.375 on it, identical to real validation sparse (old proxy 0.332) & Use the faithful proxy for all sparse decisions \\
-% R05 notes: why = upload #1's sparse gain (+1.8 pts on proxy) did not transfer (+0.1 on val); decision = use the faithful proxy for all sparse decisions.
-R06 & Hypothesis: the full-Jacobian Occam term penalises sharp eccentric fits (high\_ecc $-$7 on validation) & \texttt{occam\_mode="pk"} &
-  Worse than full Occam: vs.\ Occam-only std +2/$-$11 ($p$=0.02); high-e unchanged & Hypothesis refuted; keep the full term \\
-% R06 notes: decision = hypothesis refuted; keep the full-Jacobian Occam term.
-R07 & high\_ecc reaches $e$=0.9, beyond the baseline grid maximum 0.85 & Search changes: extra $e$=0.92 starts, 5 starts, wider window, 600 evaluations &
-  0 stars changed on 1,000 std stars for all four; sparse $\le$+2 & Search is not the bottleneck; stop \\
-% R07 notes: why = high_ecc reaches e=0.9 > baseline grid max 0.85; decision = search is not the bottleneck, stop.
-R09 & 26\% of baseline failures have the right $P$ but $K$ off by $>$10\%; ML $K$ is biased high at low SNR & K-bias correction $K/\sqrt{1+c/\mathrm{SNR}^2}$, $c$ fitted on 6,000 disjoint train stars &
-  low-SNR $K$ biased +0.04--0.05 dex; vs.\ Occam-only: +70/$-$39 on 4,000 held-out std stars ($p\approx$0.004), sparse +5/$-$3; same $c$ (6.93) fitted on std and 15-obs stars & Final model = Occam 0.5 + $c$=6.95 \\
-% R09 notes: why = 26% of baseline failures are P-right/K-wrong; ML K biased high at low SNR (E[K^2] ~ K^2 + c sig^2/N).
-%   evidence: half-B +54/-28; batch-2 occ0.5+kdb7 vs upload #1 std +16/-11, sparseV2 +5/-3, high-e +4/-6.
+R02--03 & TASK\_CARD: a perfect search adds only +0.0075, so test candidate choice and noise model & Ablation of 5 switches on 300-star train proxies; paired confirmation of \texttt{occam\_weight=0.5} &
+  Occam best (mean 0.493$\to$0.503, no extra cost); confirmed on held-out train stars: std +17/$-$5 ($p$=0.017), sparse15 +11/$-$0 ($p$=0.001) & Keep Occam 0.5; drop yearly, peaks5, bounds \\
+R04--05 & Sanity check before spending an upload & One-time validation check of Occam only; then a simulator-faithful sparse proxy (old proxy spans $\sim$4.5\% too long) &
+  Validation gain far smaller than on proxies (in-dist +0.35, sparse +0.1, high-e $-$0.7 pts); faithful proxy reproduces the real sparse baseline exactly (0.375; old proxy 0.332) & Use the faithful proxy for all sparse decisions \\
+R06--08, R13 & Test four specific hypotheses (Occam hurts eccentric fits; search misses optima; jitter bias; per-star noise for SNR) & \texttt{occam\_mode="pk"}; extra starts, $e$=0.92 grid, wider window; jitter fit with $N/(N-6)$; residual-noise SNR &
+  None helped: pk std +2/$-$11 ($p$=0.02); search changes moved 0 of 1,000 std stars; jitter std +14/$-$28; residual SNR not significant ($p\ge$0.17) & All refuted; search is not the bottleneck \\
+R09--11 & 26\% of baseline failures have the right $P$ but $K$ off by $>$10\%; ML $K$ is biased high at low SNR & $K/\sqrt{1+c/\mathrm{SNR}^2}$, $c$ fitted on 6,000 disjoint train stars; refit on augmented train variants &
+  vs.\ Occam only: +70/$-$39 on 4,000 held-out std stars ($p\approx$0.004); same $c$ (6.93) on std and 15-obs stars & Final model = Occam 0.5 + $c$=6.95 \\
+R12 & Confirm the final model before uploading & One-time validation check + official \texttt{headroom.py} &
+  0.47475 / 0.6035 / 0.311 / 0.381 (88.6\% of the Fisher benchmark; baseline 88.0\%) & Upload as submission 16 (hidden test 0.4725); freeze \\
 \bottomrule
 \end{tabularx}
 \end{table}
