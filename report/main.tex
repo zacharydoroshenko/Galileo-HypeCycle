@@ -246,11 +246,19 @@ train proxies (R03) shrank on validation (R04); why proxies mislead}
 % ===========================================================================
 \section{Limitations \& next experiment}
 % Owner: PRISHA drafts, ZACH reviews
-\fillin{PRISHA}{Most consequential uncertainty or failure mode (e.g. no train
-star has $e>0.6$, so the high-e group cannot be selected on; simulated white
-Gaussian noise; planet-free stars not scored). Then one specific next
-experiment, the competing explanations it would separate, and how each
-outcome would change our conclusion.}
+The main limitation is the data itself: noise comparable to the signal
+caps the achievable score near the Fisher benchmark, so our gains are a few
+stars and are not significant on validation alone (Fig.~\ref{fig:main}).
+Our selection data also cannot represent the high-eccentricity group (no
+training star has $e>0.6$, and simulating such stars is outside the rules),
+which is where the Occam term costs 5--7 stars; and all stars are
+simulated with white Gaussian noise, without stellar activity or
+instrument offsets. \emph{Next experiment:} choose the period from a dense
+posterior over $(P, e, \omega, M_0)$ with a prior on $K$, instead of a
+single best fit per peak. If it closes part of the $\approx$6-point gap to
+the benchmark, the gap is partly a choice problem; if not, the remaining
+failures are genuinely ambiguous and our model is near the practical
+limit.
 
 % ===========================================================================
 \section{Reproducibility, contributions \& AI use}
@@ -265,7 +273,6 @@ final plugin bakes in the selected settings. Data use: only
 \texttt{train\_inputs.npy}/\texttt{train\_targets.npy} for selection; no
 simulated stars; validation used once as a check. Code and complete logs:
 \url{https://github.com/zacharydoroshenko/Galileo-HypeCycle} at commit 5c1a5b9 (submitted code; later commits add analysis only).
-\fillin{PRISHA}{list any evidence that is unavailable}
 
 \textbf{Contributions.} Zachary Doroshenko: solver and all experiments
 (ablations, paired confirmations, proxy sets, $K$-bias calibration, late
