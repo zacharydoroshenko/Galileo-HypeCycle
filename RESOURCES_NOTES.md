@@ -111,7 +111,7 @@ R01 (baseline reimplementation) · R03 (Occam) · R04+R05 (proxy did not transfe
    as well as against the rules. In the report, call validation "held-out check" and the leaderboard "hidden test".
    **Confirmed by organizers on Discord (see above).**
 2. **10 uploads per team** (the email and RELEASE_CONTRACT both say 10; the "5" in the guide is outdated).
-   A timely accepted upload can stay queued and be scored after 4:00 pm.
+   A timely accepted upload can stay queued and be scored after the upload deadline (now 4:30 pm).
 3. **The simulator is public** (`package_exo/simulator/generate_rv_data.py`). The rules say to learn only from the
    train split, and that simulating extra stars (e.g. e >= 0.6) is outside the intended rules and must be disclosed.
    We do **not** simulate stars. Our proxies only subsample observations of existing train stars.

@@ -76,8 +76,8 @@ On our 300-star train subset the baseline scores 0.593.
 - **Sparse test set**: penalise high e / overfitting (BIC-like); use a prior from the train label distribution of P, K (this is legitimate learning from train).
 - Optional ML piece: train a small net on train data to **rank candidate periods** (features: GLS power, Δlnlike, P/baseline, n_obs). This stays physics-based but learned.
 
-**~2:15**: first upload (keep a safe one early; uploads have to be ≥3 min apart, the total is 5 or 10 (check the portal), and nothing is accepted after 4:00).
-**3:30**: final upload. **4:00–4:30**: report (4 pages): hypotheses, every attempt + why, ablations per regime, failure analysis, limitations, AI-use disclosure.
+**~2:15**: first upload (keep a safe one early; uploads have to be ≥3 min apart, the total is 5 or 10 (check the portal), and nothing is accepted after 4:30, extended).
+**4:00**: final upload (uploads close 4:30). **4:30–5:00**: report (4 pages): hypotheses, every attempt + why, ablations per regime, failure analysis, limitations, AI-use disclosure.
 
 ## Packaging
 ```sh

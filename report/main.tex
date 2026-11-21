@@ -67,6 +67,36 @@ The official baseline scores 0.4715 on validation; the per-star Fisher
 (Cram\'er--Rao) information ceiling is 0.536, and a perfect period search with
 the baseline likelihood would reach only 0.479.
 
+\textbf{Why a high success rate is out of reach.}
+% Facts with sources (TASK_CARD "Data" and "Difficulty", official analysis/headroom.py,
+% results/headroom_*.json). PRISHA/ZACH: rephrase in our own words and keep the caveat.
+The limit comes from the data, not from the method. Per-point noise is
+comparable to the signal: reported errors are 1--5\,m/s plus an unreported
+stellar jitter of 1--3\,m/s, while $K$ is log-uniform in 2--100\,m/s, so
+23.7\% of validation stars have $K<5$\,m/s, sampled 15--60 times. The success
+box is strict ($P$ within 1\%, $K$ within 10\%). The official Fisher
+(Cram\'er--Rao) analysis, which propagates the true noise to the
+uncertainty of $(\ln P, \ln K)$ at the true orbit, gives each star a
+probability of landing in that box: 20.3\% of validation stars have
+probability $<0.1$ (no method can be expected to recover them), and only
+31.4\% have probability $>0.9$, where the baseline already succeeds 97.7\%
+of the time (our final model: 97.9\%). The mean is 0.536 overall (in-dist.\ 0.657, high-$e$ 0.357,
+sparse 0.472). Most alias failures are not search errors either: in only 7
+of the baseline's alias failures does the true orbit fit the data better
+than the baseline's answer, so the data genuinely prefer the alias at this
+noise level. A perfect period search adds only +0.0075 (TASK\_CARD) and
++0.011 for our final model, and four search changes we tried moved 0 of
+1,000 stars (R07). Two caveats: the Fisher value is a \emph{benchmark}
+rather than a strict maximum. It is local (it assumes the right peak was
+found and ignores aliases, which makes it optimistic) and applies to
+unbiased estimators (a biased estimator, such as our $K$ correction, can
+beat it on individual stars). Also, with 4,000 test stars one binomial
+standard error is $\approx$0.8 points, so differences between methods are
+small compared with the noise in a single score.
+\fillin{BOTH}{One or two sentences in our own words: what this means for how
+the score should be judged, and why we measure improvements with paired
+comparisons on the same stars.}
+
 \textbf{Initial hypothesis.} \fillin{BOTH}{State it, why it was plausible,
 and what observation would support or contradict it.}
 

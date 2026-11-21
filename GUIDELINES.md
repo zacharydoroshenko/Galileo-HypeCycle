@@ -2,7 +2,7 @@
 
 ## Constraints
 
-**Time:** 3 hours of actual competition (1–4 pm PST). Models close at 4:00 pm, report PDF closes at 4:30 pm.
+**Time:** competition 1–4:30 pm PST (extended 30 min by the organizers). Models and GPU access close at 4:30 pm, report PDF closes at 5:00 pm.
 
 **Submissions:** 10 accepted uploads total across all tasks for the whole team (the website's track2-guide page says 5 — confirm with organizers and plan for 5). Failed evaluations do not refund an upload, so budget carefully. Uploads to the same task need a 3-minute cooldown.
 
@@ -16,7 +16,7 @@
 
 **Rules:** Train only on the train split, never on validation/test data or labels. Do not modify the official evaluator. Predictions must be finite and not all identical, or the submission fails.
 
-**Report:** At most 4 pages of main content (references can go on extra pages), PDF ≤ 10 MiB, due 4:30 pm.
+**Report:** At most 4 pages of main content (references can go on extra pages), PDF ≤ 10 MiB, due 5:00 pm (extended).
 
 ---
 
