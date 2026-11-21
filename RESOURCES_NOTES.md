@@ -4,6 +4,38 @@ Sources: the event email, the hackathon README + report template README, the tas
 (TASK_CARD, RELEASE_CONTRACT, simulator, metric/health plugins, analysis/), the official example
 submission, the SIDERIUS master code, the TESS warm-up, and `/data/galileo/README.md` on the GPU box.
 
+## UPDATE FOR PRISHA (~15:30): model FINAL, report status, what's left
+
+**Model: submission 16 (0.4725 hidden test) is final.** Late experiments R14–R19 (all in `report/EXPERIMENT_LOG.md`)
+found nothing that replicates, so no more uploads (4 unused). Short version for the report, if there's space:
+- e-cutoff (no Occam for eccentric fits): clearly harmful (std −12/−18, sparse −22/−38). **The Occam penalty protects
+  against spurious eccentric fits**; its cost on true high-e stars is a real tradeoff, not a bug.
+- jitter fit for N≥30: +30/−16 (p=0.05) on fresh stars, then **+27/−31 on an independent replication set**. A chance result,
+  caught by replication. This is a nice methodology point (many variants tested → p≈0.05 is expected by chance).
+- Joker-style grid evidence (R17) and a GPU dense posterior (R19): not adopted. **R19 is deliberately NOT in the report**
+  (Zach's decision: no space). The GPU MAP picked the right peak more often (85% vs 81%), but the CPU version was too slow/not
+  better before the deadline. Optional one-liner for §5 "next experiment": dense GPU posterior with a proper K prior + refinement.
+
+**Report changes I made (compile: `cd report && tectonic -X compile main.tex --outdir ../build/report`;
+view: `open build/report/main.pdf`).** Tectonic is installed on Zach's laptop; it compiles cleanly.
+- Comparison table (Table 2) filled: baseline / final (validation + hidden test) / two alternatives (Occam only, K-debias only).
+  Hidden-test per-group = n/a (the leaderboard shows only the overall score).
+- Reward-hacking section: **Table 3 (local loophole audit, never uploaded)** with all facts in `%` comments above it.
+  The prose (your placeholder) is still to write. Key fact: e→0.1 leaves success unchanged while the median e error rises
+  0.059→0.152 (high-e group 0.065→0.648). K-box recentring gives +0.1 pt (n.s.).
+- Health gates / seed / commit TBDs filled. **References: 7 entries we actually used**, cited in §1 and §3 (task package
+  Zenodo DOI, Zechmeister & Kürster 2009, Dawson & Fabrycky 2010, MacKay 2003 Occam factor, Shen & Turner 2008 K bias,
+  Price-Whelan 2017 The Joker, Kipping 2013).
+- **Wording:** "TASK\_CARD" reads like jargon. First mention: "the official task card (`TASK_CARD.md` in the task package [1])",
+  then "the task card". (It is the file in the package, not the website page.)
+
+**Page budget.** The body already fills ~3.5 of 4 pages. Still empty: title, abstract, §1 objective + hypothesis +
+"paired comparisons" sentences, §2 intro, Figure 1 caption, **§4 three insights (largest gap)**, §5, §6 contributions + AI use,
+reward prose, affiliations. Keep each insight to 2–3 lines; if over 4 pages, cut the optional reward section first.
+
+**Timeline:** report due **5:00 pm** (upload at https://submit.siderius.scitra.org/track2/reports, linked to submission **16**).
+Suggest: insights + §5 + AI use by ~4:15, abstract/title by ~4:30, final compile + 4-page check + upload by ~4:45.
+
 ## DEADLINES (organizers on Discord, ~14:42): extended by 30 min because of the delayed emails
 - **Model uploads + GPU access end 4:30 pm PST.** Everything needed from the GPU box is already in `results/` on the laptop.
 - **Report PDF due 5:00 pm PST** (https://submit.siderius.scitra.org/track2/reports, linked to submission **16**).
