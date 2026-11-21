@@ -113,7 +113,7 @@ with paired comparisons on the same stars, which separate a real gain of a
 few stars from the sampling noise of a single score.
 
 \textbf{Initial hypothesis.} We expected period aliasing to be the main
-bottleneck: because the stars are observed only at night and only in
+\emph{fixable} bottleneck: because the stars are observed only at night and only in
 certain seasons, the true period has daily and yearly aliases, and we
 expected most failures to come from the method selecting one of them.
 A more thorough period search and better alias handling should then raise
@@ -132,7 +132,9 @@ search changes later moved 0 of 1,000 stars (R07). The limiting factor is
 the noise in the data: measurement errors and stellar jitter are
 comparable to the signal, so for many stars the correct orbit cannot be
 distinguished from an alias or pinned down within the 10\% amplitude
-tolerance. We therefore stopped working on the search and focused on how
+tolerance. Aliases still account for about a quarter of the baseline's
+failures, but they are a consequence of the noise rather than of the
+search. We therefore stopped working on the search and focused on how
 the method chooses among candidates and on the bias of the amplitude
 estimate at low signal-to-noise. Full logs:
 \url{https://github.com/zacharydoroshenko/Galileo-HypeCycle}
@@ -158,7 +160,7 @@ R06--08, R13 & Test four specific hypotheses (Occam hurts eccentric fits; search
 R09--11 & 26\% of baseline failures have the right $P$ but $K$ off by $>$10\%; ML $K$ is biased high at low SNR & $K/\sqrt{1+c/\mathrm{SNR}^2}$, $c$ fitted on 6,000 disjoint train stars; refit on augmented train variants &
   vs.\ Occam only: +70/$-$39 on 4,000 held-out std stars ($p\approx$0.004); same $c$ (6.93) on std and 15-obs stars & Final model = Occam 0.5 + $c$=6.95 \\
 R12 & Confirm the final model before uploading & One-time validation check + official \texttt{headroom.py} &
-  0.47475 / 0.6035 / 0.311 / 0.381 (88.6\% of the Fisher benchmark; baseline 88.0\%) & Upload as submission 16 (hidden test 0.4725); freeze \\
+  0.4748 / 0.6035 / 0.311 / 0.381 (88.6\% of the Fisher benchmark; baseline 88.0\%) & Upload as submission 16 (hidden test 0.4725); freeze \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -220,7 +222,11 @@ Fisher ceiling & validation & 0.536 & 0.657 & 0.357 & 0.472 & -- \\
 \begin{minipage}{0.49\linewidth}
 \figorbox{figs/failure_breakdown.pdf}{Failure classes (headroom.py): K-off, 1-day alias, yearly alias, harmonic, other}
 \end{minipage}
-\caption{\fillin{PRISHA}{caption: what the reader should take away}}
+\caption{Validation (held-out check). \textbf{Left:} success by group vs.\
+the Fisher benchmark (dashed). Every change from the baseline ($-$0.5 to
++0.6 pts) is within one standard error (0.8--1.5 pts): no significant
+improvement on validation alone; our evidence is paired (Table~\ref{tab:trajectory}).
+\textbf{Right:} failures mostly move between classes rather than disappear.}
 \label{fig:main}
 \end{figure}
 
