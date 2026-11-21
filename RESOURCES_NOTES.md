@@ -4,6 +4,37 @@ Sources: the event email, the hackathon README + report template README, the tas
 (TASK_CARD, RELEASE_CONTRACT, simulator, metric/health plugins, analysis/), the official example
 submission, the SIDERIUS master code, the TESS warm-up, and `/data/galileo/README.md` on the GPU box.
 
+## UPDATE FOR PRISHA (~14:35): hidden-test result and how to frame it
+
+**Upload #1 = submission 16 was scored on the hidden test: 0.4725** (status `scored`, review passed, on the live
+leaderboard as Hype Cycle / G2-15). Portal scoring time **155 s**, which matches our projection of 161 s for 4,000 stars at
+14 workers (limit 1,800 s). ZIP 32.6 KB, SHA-256 `1a4b4e94…e2662`, commit 5c1a5b9. Recorded in `report/SUBMISSIONS.md`.
+The model is **frozen**; 4 of 5 uploads are left in reserve.
+
+**How good is 0.4725? Reference points (facts; the framing in the report is ours to write):**
+1. **Physical limit.** The Fisher ceiling (official `headroom.py`, validation) is **0.536**. We reach **88.6%** of it on
+   validation; the baseline reaches 88.0%. TASK_CARD: "large gains in success_rate are not physically possible". About 6 points
+   of headroom remain, mostly stars where the data genuinely prefer a wrong answer (only 2.7% of our failures are
+   recoverable by a better search).
+2. **Vs the baseline (same stars).** Validation 0.47475 vs 0.4715 = +13 stars (+0.3 pts), i.e. about 5% of the remaining gap to the
+   ceiling closed. The **paired** train-side evidence is the strong part: K-debias +70/−39 on 4,000 held-out std stars
+   (p≈0.004); Occam vs baseline std +19/−6 (p=0.01).
+3. **Noise in the hidden-test number.** One binomial standard error on 4,000 stars is about **±0.8 pts**. So hidden 0.4725 vs
+   validation 0.47475 is the same performance on a different sample. **We cannot claim we beat the baseline on the hidden
+   test**: the leaderboard shows no baseline score (`baseline: null`) and no per-group scores. Base the improvement claim on the
+   paired comparisons (and say so); report the hidden-test number as the official score.
+
+**Framing for the award.** Leaderboard differences on this task will be small and noisy because of the ceiling, so the report is
+where we can stand out. Judges weigh evidence, reproducibility and insight; "Outstanding Research & Insight" explicitly
+allows a well-explained near-ceiling or negative result. What we can show:
+- exact reproduction of the official baseline (4 decimals; failure anatomy matches the TASK_CARD),
+- two improvements, each with a physical mechanism and a *different* failure mode: Occam cuts 1-day-alias failures
+  8.4% → 5.4%; K-debias lowers median rel. K error 0.0790 → 0.0751 (the gains add up),
+- an independent confirmation of the TASK_CARD's "search is not the bottleneck" (four search changes moved 0 of 1,000 stars),
+- the proxy that did not transfer, the diagnosis (span bias, ~4.5%), and the fix (faithful proxy reproduces 0.375 exactly),
+- refuted hypotheses reported honestly (pk-Occam R06, jitter R08, residual-noise SNR R13),
+- paired sign tests throughout; validation used once; no simulated stars; scoring speed reproduced by the organizers' sandbox.
+
 ## UPDATE FOR PRISHA (~14:30): status, numbers and files you need
 
 **Model status.** Final candidate = `occam_weight=0.5` + `k_debias_c=6.95` (R10–R12). It is **not uploaded yet**:
