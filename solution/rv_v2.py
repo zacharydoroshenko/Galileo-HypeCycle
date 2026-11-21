@@ -93,7 +93,14 @@ CONFIG = {
     "occam_e_cut": None,
     "evidence_mode": None,     # "grid": score candidates by -log marginal likelihood over the (e, omega, M0) grid
                                # (K, gamma marginalised analytically; + period width from the fit), The-Joker style
-    "evidence_weight": 1.0,    # grid score = w * (-logZ) + (1 - w) * (current nll + occam)       # if set, no Occam term for candidates whose fitted e exceeds this       # ML jitter with N/(N-6) residual correction (less biased for few points)
+    "evidence_weight": 1.0,
+    "dense_mode": None,        # "map": candidates = MAP frequency of a dense Joker-style posterior (+ its 1-day alias)
+                               # "add": MAP frequency added to the periodogram candidates
+    "dense_oversample": 3.0,   # dense frequency grid step = 1 / (oversample * span)
+    "dense_e": (0.0, 0.3, 0.6, 0.85),
+    "dense_n_omega": 4,
+    "dense_n_phase": 8,
+    "dense_k_max": 100.0,      # proper K prior: posterior K width capped at the train K range    # grid score = w * (-logZ) + (1 - w) * (current nll + occam)       # if set, no Occam term for candidates whose fitted e exceeds this       # ML jitter with N/(N-6) residual correction (less biased for few points)
     "k_debias_c": 0.0,         # K_out = K / sqrt(1 + c / snr^2), snr = K sqrt(N) / sig_eff (low-SNR ML K bias)
     "k_debias_floor": 0.5,
     "k_debias_noise": "assumed",  # "assumed": sig_eff^2 = mean(sigma^2) + 2^2; "residual": RMS residual * N/(N-6)
@@ -263,6 +270,52 @@ def _grid_log_evidence(t, y, w, period, ext=False):
     return float(m + np.log(np.mean(np.exp(terms - m))))
 
 
+_DENSE_CACHE = {}
+
+
+def _dense_shapes(cfg):
+    key = (tuple(cfg["dense_e"]), int(cfg["dense_n_omega"]), int(cfg["dense_n_phase"]))
+    if key not in _DENSE_CACHE:
+        es, oms, ms = [], [], []
+        for e in cfg["dense_e"]:
+            omegas = [0.0] if e == 0.0 else list(np.arange(key[1]) * 2 * np.pi / key[1])
+            for om in omegas:
+                for m0 in np.arange(key[2]) * 2 * np.pi / key[2]:
+                    es.append(e); oms.append(om); ms.append(m0)
+        _DENSE_CACHE[key] = (np.array(es), np.array(oms), np.array(ms))
+    return _DENSE_CACHE[key]
+
+
+def dense_map_frequency(t, y, w, span, cfg, chunk=64):
+    """MAP frequency of p(f | data) on a dense grid: shapes (e, omega, M0) summed, K and gamma marginalised under a
+    PROPER K prior (posterior width capped at dense_k_max), log-uniform P prior on [1, 1000] d (train label range)."""
+    es, oms, ms = _dense_shapes(cfg)
+    df = 1.0 / (float(cfg["dense_oversample"]) * max(span, 1.0))
+    freqs = np.arange(1.0 / 1000.0, 1.0, df)
+    sw, yw, yy = w.sum(), (w * y).sum(), (w * y * y).sum()
+    logkmax = np.log(float(cfg["dense_k_max"]))
+    best_lp, best_f = -np.inf, freqs[0]
+    e, om, m0 = es[None, :, None], oms[None, :, None], ms[None, :, None]
+    for i in range(0, len(freqs), chunk):
+        f = freqs[i:i + chunk, None, None]
+        M = np.mod(2 * np.pi * f * t[None, None, :] + m0, 2 * np.pi)
+        E = M + 0.85 * e * np.sign(np.sin(M))
+        for _ in range(12):
+            E = E - (E - e * np.sin(E) - M) / (1 - e * np.cos(E))
+        nu = 2 * np.arctan2(np.sqrt(1 + e) * np.sin(E / 2), np.sqrt(1 - e) * np.cos(E / 2))
+        sh = np.cos(nu + om) + e * np.cos(om)
+        a11 = (w * sh * sh).sum(-1); a12 = (w * sh).sum(-1); b1 = (w * sh * y).sum(-1)
+        det = np.maximum(a11 * sw - a12 * a12, 1e-20)
+        chi2 = yy - (sw * b1 * b1 - 2 * a12 * b1 * yw + a11 * yw * yw) / det
+        terms = -0.5 * chi2 + np.minimum(0.5 * (np.log(sw) - np.log(det)), logkmax)
+        mx = terms.max(1, keepdims=True)
+        lp = (mx[:, 0] + np.log(np.mean(np.exp(terms - mx), 1))) - np.log(freqs[i:i + chunk])
+        j = int(np.argmax(lp))
+        if lp[j] > best_lp:
+            best_lp, best_f = lp[j], freqs[i + j]
+    return float(best_f)
+
+
 def _ml_jitter(r, sig, dof=False):
     """Maximum-likelihood jitter s >= 0 for residuals r with reported errors sig (1-D, bounded).
     dof=True inflates residuals by sqrt(N/(N-6)) (6 fitted Keplerian parameters), removing most
@@ -307,7 +360,12 @@ def fit_star(x_star: np.ndarray, cfg: dict | None = None) -> np.ndarray:
     peaks = top_peaks(gls_power(t, y, w / w.sum()), separation=width, n=int(cfg["n_peaks"]))
     fits = []  # (chi2 cost, x, jac, f_lo, f_hi)
     fw, nfev = float(cfg["freq_window"]), int(cfg["max_nfev"])
-    for freq in candidates(peaks, separation=width, yearly=bool(cfg["yearly_aliases"])):
+    cand = candidates(peaks, separation=width, yearly=bool(cfg["yearly_aliases"]))
+    if cfg.get("dense_mode") in ("map", "add"):
+        f_map = dense_map_frequency(t, y, w, span, cfg)
+        extra = [f_map] + ([abs(1.0 - f_map)] if FREQ_MIN <= abs(1.0 - f_map) <= FREQ_MAX else [])
+        cand = extra if cfg["dense_mode"] == "map" else cand + [f for f in extra if all(abs(f - g) > width for g in cand)]
+    for freq in cand:
         f_lo = max(freq - fw * width, 0.5 * FREQ_MIN)
         f_hi = freq + fw * width
         for x0 in _starts_for_period(t, y, w, 1.0 / freq, ext=bool(cfg["e_grid_ext"]),
