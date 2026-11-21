@@ -8,7 +8,7 @@ Checksum: `shasum -a 256 <zip>`. The report must cite the final row's submission
 | # | Time uploaded | Submission ID | ZIP filename | SHA-256 | Git commit | Config | Status | Hidden-test score (overall / in-dist / high-e / sparse) |
 |---|---|---|---|---|---|---|---|---|
 | 1 | 14:25:38 PST (22:25:38Z) | **16** | `upload2-v2-submission-220842.zip` (local name; built on GPU box as `v2-submission-220842.zip`) | `1a4b4e949e24dea461a470e697b774e4bce2ec0305c1fdf5fd6b17e808d2e662` | 5c1a5b9 | `occam_weight=0.5`, `k_debias_c=6.95` (validation check: 0.47475 / 0.6035 / 0.311 / 0.381) | **scored** (14:29, review passed, on leaderboard; portal: scoring time 155 s, ZIP 32.6 KB; our projection was 161 s for 4,000 stars at 14 workers) | **0.4725** / per-group not shown on leaderboard |
-| 2 | (pending) | (pending) | `upload2-v2-submission-234953.zip` | `a5fddcbb9ea732a2b30078df4d2e21bcc02f42b70defd31d7e1d1417ef73f281` | (this commit) | `occam_weight=0.5`, `k_debias_snr="rms"`, `k_debias_c=8.88` (R21) | | |
+| 2 | 15:55:25 PST (23:55:25Z) | **72** | `upload2-v2-submission-234953.zip` | `a5fddcbb9ea732a2b30078df4d2e21bcc02f42b70defd31d7e1d1417ef73f281` | (this commit) | `occam_weight=0.5`, `k_debias_snr="rms"`, `k_debias_c=8.88` (R21; validation check 0.47725 / 0.607 / 0.312 / 0.383, median rel K err 0.0732) | queued | |
 | 3 | | | | | | | | |
 | 4 | | | | | | | | |
 | 5 | | | | | | | | |
