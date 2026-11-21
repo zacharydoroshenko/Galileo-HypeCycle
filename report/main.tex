@@ -108,16 +108,31 @@ small compared with the noise in a single score.
 the score should be judged, and why we measure improvements with paired
 comparisons on the same stars.}
 
-\textbf{Initial hypothesis.} \fillin{BOTH}{State it, why it was plausible,
-and what observation would support or contradict it.}
+\textbf{Initial hypothesis.} We expected period aliasing to be the main
+bottleneck: because the stars are observed only at night and only in
+certain seasons, the true period has daily and yearly aliases, and we
+expected most failures to come from the method selecting one of them.
+A more thorough period search and better alias handling should then raise
+the success rate. The hypothesis would be contradicted if a perfect period
+search added little, or if the data themselves favoured the alias in most
+alias failures.
 
 % ===========================================================================
 \section{Research trajectory}
 % Owner: ZACH writes rows as runs finish; PRISHA keeps report/EXPERIMENT_LOG.md
 % in sync and writes the connecting prose.
-\fillin{PRISHA}{2--4 sentences on how evidence changed our decisions. Full
-logs: \url{https://github.com/zacharydoroshenko/Galileo-HypeCycle}
-(\texttt{report/EXPERIMENT\_LOG.md}, \texttt{build/*.jsonl}).}
+The evidence contradicted our initial hypothesis. The TASK\_CARD analysis
+showed that a perfect period search would add only +0.0075, and that in
+almost all alias failures the data genuinely prefer the alias; our own
+search changes later moved 0 of 1,000 stars (R07). The limiting factor is
+the noise in the data: measurement errors and stellar jitter are
+comparable to the signal, so for many stars the correct orbit cannot be
+distinguished from an alias or pinned down within the 10\% amplitude
+tolerance. We therefore stopped working on the search and focused on how
+the method chooses among candidates and on the bias of the amplitude
+estimate at low signal-to-noise. Full logs:
+\url{https://github.com/zacharydoroshenko/Galileo-HypeCycle}
+(\texttt{report/EXPERIMENT\_LOG.md}, \texttt{results/}).
 
 \begin{table}[ht]
 \caption{Decision trail. Run IDs match \texttt{report/EXPERIMENT\_LOG.md}.
