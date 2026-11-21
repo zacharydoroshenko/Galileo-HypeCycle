@@ -60,6 +60,16 @@ BATCH4 = {
 }
 BATCH5 = {"final": dict(FINAL), "f+jit30": dict(FINAL, jitter_fit=True, jitter_dof=True, jitter_min_nobs=30)}
 SETS5 = {"freshB_std2500": "freshB_std2500.npz"}
+CHEAP = dict(dense_oversample=2.0, dense_e=(0.0, 0.5), dense_n_omega=4, dense_n_phase=8)
+BATCH6 = {
+    "final": dict(FINAL),
+    "f+dense_add": dict(FINAL, dense_mode="add", **CHEAP),
+    "f+dense_map": dict(FINAL, dense_mode="map", **CHEAP),
+}
+SETS6 = {"fstd600": "fresh_std600.npz", "fsparse600": "fresh_sparse600.npz", "fhie300": "fresh_hie300.npz"}
+BATCH7 = {"final": dict(FINAL), "f+rmsSNR": dict(FINAL, k_debias_snr="rms", k_debias_c=8.88)}
+SETS7 = {"fstd2000": "fresh_std2000.npz", "fsparse2000": "fresh_sparse2000.npz", "fhie600": "fresh_hie600.npz",
+         "freshB2500": "freshB_std2500.npz"}
 SETS3 = {"fstd2000": "fresh_std2000.npz", "fsparse2000": "fresh_sparse2000.npz", "fhie600": "fresh_hie600.npz"}
 SETS = {"std1000": "confirm_std1000.npz", "sparse600": "confirm_sparse600.npz", "hiecc300": "train_hiecc300.npz"}
 SETS2 = {"std1000": "confirm_std1000.npz", "sparseV2": "confirm_sparse_v2_1000.npz", "hiecc300": "train_hiecc300.npz"}
@@ -84,6 +94,10 @@ if __name__ == "__main__":
         CONFIGS, SETS = BATCH2, SETS2
     if a.batch == 3:
         CONFIGS, SETS, REFS = BATCH3, SETS3, ("final",)
+    if a.batch == 7:
+        CONFIGS, SETS, REFS = BATCH7, SETS7, ("final",)
+    if a.batch == 6:
+        CONFIGS, SETS, REFS = BATCH6, SETS6, ("final",)
     if a.batch == 5:
         CONFIGS, SETS, REFS = BATCH5, SETS5, ("final",)
     if a.batch == 4:
