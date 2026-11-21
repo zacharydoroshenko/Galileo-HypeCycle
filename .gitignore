@@ -10,3 +10,11 @@ package_exo/
 EMAIL.md
 *.key
 .openai_key
+
+# LaTeX build files
+report/*.aux
+report/*.fdb_latexmk
+report/*.fls
+report/*.log
+report/*.out
+report/*.synctex.gz
