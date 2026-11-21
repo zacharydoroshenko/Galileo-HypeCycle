@@ -57,7 +57,7 @@ submission ID.}
 $(P, K)$ from a few dozen night-time RV points means for exoplanet surveys.
 Define RV, $P$, $K$, $e$, aliasing, jitter in one or two sentences each.}
 
-\textbf{Task facts (from TASK\_CARD).} Input: up to 60 observations per star
+\textbf{Task facts (from TASK\_CARD~\cite{galileo2026}).} Input: up to 60 observations per star
 (time, RV, reported error, mask). Output: $[\log_{10}P, \log_{10}K, e]$.
 Metric: \texttt{success\_rate} (higher is better), the share of stars with
 $|P_\text{pred}/P_\text{true}-1|<1\%$ and $|K_\text{pred}/K_\text{true}-1|<10\%$;
@@ -145,11 +145,11 @@ R12 & Confirm the final model before uploading & One-time validation check + off
 %  - kind=algorithm; train_command only bakes the settings (+P/K bounds read from train labels); 0.31 s/star, 161 s for 4,000 stars at 14 workers
 % DRAFTED FROM THE LOG BY THE CODING ASSISTANT: Zach, reread and reword in your own words.
 Our final model keeps the official baseline's candidate search and changes only how a candidate is chosen and how
-$K$ is reported. Candidates are the three highest peaks of a generalised Lomb--Scargle periodogram plus their 1-day
+$K$ is reported. Candidates are the three highest peaks of a generalised Lomb--Scargle periodogram~\cite{zechmeister2009} plus their 1-day
 aliases; for each, 396 $(e,\omega,M_0)$ grid points with $K$ and $\gamma$ solved by weighted linear least squares seed
 a bounded six-parameter least-squares fit. Instead of the lowest $\chi^2$, we choose the fit minimising
-$\chi^2/2 + w\cdot\tfrac12\log\det(J^\top J)$, a Laplace (Occam) factor that prefers well-determined solutions
-when the data are ambiguous, with $w=0.5$ selected on held-out train stars. We then correct the low-SNR upward bias of
+$\chi^2/2 + w\cdot\tfrac12\log\det(J^\top J)$, a Laplace (Occam) factor~\cite{mackay2003} that prefers well-determined solutions
+when the data are ambiguous, with $w=0.5$ selected on held-out train stars. We then correct the low-SNR upward bias~\cite{shen2008} of
 the maximum-likelihood amplitude, $K_\mathrm{out}=K/\sqrt{1+c/\mathrm{SNR}^2}$ with $\mathrm{SNR}=K\sqrt{N}/\sigma_\mathrm{eff}$,
 where $c=6.95$ was fitted on 6,000 train stars disjoint from all evaluation sets. The submission is \texttt{kind=algorithm}:
 \texttt{train\_command} writes the plugin with these two constants (and the train-label $P$/$K$ ranges, unused) and
@@ -159,7 +159,7 @@ learns no weights; it runs at 0.31\,CPU-s per star (161\,s for 4,000 stars with 
 \texttt{1a4b4e94\ldots e2662} (full value in \texttt{report/SUBMISSIONS.md}). Git commit: 5c1a5b9. Splits: selection on TRAIN-derived proxies only; validation used once
 as a held-out check; the leaderboard score is on the organizers' hidden test
 set. Health gates (finite outputs, $0\le e<1$, positive $P,K$, dispersion of
-$\log_{10}P \ge 0.05$ dex): \tbd.
+$\log_{10}P \ge 0.05$ dex): all passed (local smoke tests on train and validation; the portal scored submission 16, which requires the blocking gates to pass).
 
 \begin{table}[ht]
 \caption{Comparable measurements (\texttt{success\_rate}, higher is better).
@@ -225,13 +225,13 @@ outcome would change our conclusion.}
 \textbf{Reproduce.} \texttt{train\_command}:
 \texttt{python train/train\_v2.py --data\_dir "\$DATA\_DIR" --seed "\$SEED" --out final\_model.py}.
 Environment: SIDERIUS v1.1.0, Python 3.12, NumPy, SciPy (no other
-dependencies). \texttt{kind=algorithm}, seed \tbd{} (the algorithm draws no
+dependencies). \texttt{kind=algorithm}, seed 0 (the algorithm draws no
 random numbers; the seed is recorded for the interface);
 \texttt{initial\_algorithm.py} is the unmodified switchable source, and the
 final plugin bakes in the selected settings. Data use: only
 \texttt{train\_inputs.npy}/\texttt{train\_targets.npy} for selection; no
 simulated stars; validation used once as a check. Code and complete logs:
-\url{https://github.com/zacharydoroshenko/Galileo-HypeCycle} at commit \tbd.
+\url{https://github.com/zacharydoroshenko/Galileo-HypeCycle} at commit 5c1a5b9 (submitted code; later commits add analysis only).
 \fillin{PRISHA}{list any evidence that is unavailable}
 
 \textbf{Contributions.} Zachary Doroshenko: \fillin{ZACH}{}.
@@ -280,8 +280,19 @@ premise; sparse stars are identifiable from their 15-point mask.}
 % References may extend beyond the four-page body. Do not add narrative appendices.
 \clearpage
 \begin{thebibliography}{9}
+\bibitem{galileo2026} Galileo Hackathon organizers. \texttt{exoplanet-orbits} task package (TASK\_CARD, simulator
+\texttt{generate\_rv\_data.py} v2, official baseline, \texttt{analysis/headroom.py}) and data. Zenodo,
+doi:10.5281/zenodo.24361910, 2026.
 \bibitem{zechmeister2009} M.~Zechmeister and M.~K\"urster. The generalised
 Lomb--Scargle periodogram. \emph{A\&A} 496:577--584, 2009.
-\fillin{BOTH}{Verify; add only references we actually used (TASK\_CARD / package, Fisher-ceiling method).}
+\bibitem{dawson2010} R.~I.~Dawson and D.~C.~Fabrycky. Radial velocity planets de-aliased. \emph{ApJ} 722:937, 2010.
+\bibitem{mackay2003} D.~J.~C.~MacKay. \emph{Information Theory, Inference, and Learning Algorithms}, ch.~28
+(Model comparison and Occam's razor). Cambridge University Press, 2003.
+\bibitem{shen2008} Y.~Shen and E.~L.~Turner. On the eccentricity distribution of exoplanets from radial velocity
+surveys. \emph{ApJ} 685:553, 2008.
+\bibitem{pricewhelan2017} A.~M.~Price-Whelan et al. The Joker: a custom Monte Carlo sampler for binary-star and
+exoplanet radial velocity data. \emph{ApJ} 837:20, 2017.
+\bibitem{kipping2013} D.~M.~Kipping. Parametrizing the exoplanet eccentricity distribution with the beta
+distribution. \emph{MNRAS} 434:L51, 2013.
 \end{thebibliography}
 \end{document}
