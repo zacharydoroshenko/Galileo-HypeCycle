@@ -58,6 +58,8 @@ BATCH4 = {
     "grid0.5": dict(FINAL, evidence_mode="grid", evidence_weight=0.5),
     "grid0.25": dict(FINAL, evidence_mode="grid", evidence_weight=0.25),
 }
+BATCH5 = {"final": dict(FINAL), "f+jit30": dict(FINAL, jitter_fit=True, jitter_dof=True, jitter_min_nobs=30)}
+SETS5 = {"freshB_std2500": "freshB_std2500.npz"}
 SETS3 = {"fstd2000": "fresh_std2000.npz", "fsparse2000": "fresh_sparse2000.npz", "fhie600": "fresh_hie600.npz"}
 SETS = {"std1000": "confirm_std1000.npz", "sparse600": "confirm_sparse600.npz", "hiecc300": "train_hiecc300.npz"}
 SETS2 = {"std1000": "confirm_std1000.npz", "sparseV2": "confirm_sparse_v2_1000.npz", "hiecc300": "train_hiecc300.npz"}
@@ -82,6 +84,8 @@ if __name__ == "__main__":
         CONFIGS, SETS = BATCH2, SETS2
     if a.batch == 3:
         CONFIGS, SETS, REFS = BATCH3, SETS3, ("final",)
+    if a.batch == 5:
+        CONFIGS, SETS, REFS = BATCH5, SETS5, ("final",)
     if a.batch == 4:
         CONFIGS, SETS, REFS = BATCH4, SETS3, ("final",)
     a.configs = a.configs or list(CONFIGS)
