@@ -81,6 +81,14 @@ CONFIG = {
     "n_rescore": 4,          # best fits (by chi2) that get jitter refit + rescoring
     "occam_weight": 0.0,
     "bound_penalty": 0.0,
+    "e_grid_ext": False,       # add e=0.92 to the start grid (high_ecc group reaches 0.9)
+    "n_starts": 3,             # grid points that seed least_squares per candidate
+    "freq_window": 1.5,        # +- peak widths the refinement may move
+    "max_nfev": 300,
+    "occam_mode": "full",      # "full": 0.5 logdet(J^T J); "pk": -0.5 logdet of marginal cov(lnP, lnK)
+    "occam_weight_sparse": None,  # if set, occam weight used for stars with <= sparse_nobs observations
+    "sparse_nobs": 20,
+    "jitter_dof": False,       # ML jitter with N/(N-6) residual correction (less biased for few points)
     "P_bounds": [1.0, 1000.0],   # overwritten from train labels by train/train.py
     "K_bounds": [2.0, 100.0],
 }
@@ -171,9 +179,9 @@ def _linear_k_gamma(f, y, w):
     return k, gamma, (w * resid * resid).sum(-1)
 
 
-def _grid():
+def _grid(e_values=E_GRID):
     es, oms, ms = [], [], []
-    for e in E_GRID:
+    for e in e_values:
         omegas = [0.0] if e == 0.0 else list(np.arange(N_OMEGA) * 2.0 * np.pi / N_OMEGA)
         for om in omegas:
             for m0 in np.arange(N_PHASE) * 2.0 * np.pi / N_PHASE:
@@ -184,13 +192,14 @@ def _grid():
 
 
 _GRID_E, _GRID_OMEGA, _GRID_M0 = _grid()  # 396 points
+_GRID_EXT = _grid(tuple(E_GRID) + (0.92,))  # + 96 points at e = 0.92
 
 
-def _starts_for_period(t, y, w, period):
-    es, oms, ms = _GRID_E, _GRID_OMEGA, _GRID_M0
+def _starts_for_period(t, y, w, period, ext=False, n_starts=N_STARTS):
+    es, oms, ms = _GRID_EXT if ext else (_GRID_E, _GRID_OMEGA, _GRID_M0)
     f = shape(t[None, :], period, es[:, None], oms[:, None], ms[:, None])
     k, gamma, chi2 = _linear_k_gamma(f, y, w)
-    best = np.argsort(chi2, kind="stable")[:N_STARTS]
+    best = np.argsort(chi2, kind="stable")[:n_starts]
     starts = []
     for i in best:
         kk, om = k[i], oms[i]
@@ -214,7 +223,7 @@ def _model(x, t):
     return k_amp * shape(t, period, e, omega, m0) + gamma
 
 
-def refine(t, y, sig_eff, x0, f_lo, f_hi):
+def refine(t, y, sig_eff, x0, f_lo, f_hi, max_nfev=MAX_NFEV):
     """Local Keplerian least squares from x0 with the frequency kept in [f_lo, f_hi]; (cost, x) or None."""
     lower = np.array([-np.log(f_hi), np.log(1e-3), -0.98, -0.98, -np.inf, -np.inf])
     upper = np.array([-np.log(f_lo), np.log(1e4), 0.98, 0.98, np.inf, np.inf])
@@ -222,16 +231,26 @@ def refine(t, y, sig_eff, x0, f_lo, f_hi):
     try:
         res = least_squares(
             lambda x: (y - _model(x, t)) / sig_eff, x0, bounds=(lower, upper),
-            method="trf", x_scale="jac", max_nfev=MAX_NFEV,
+            method="trf", x_scale="jac", max_nfev=max_nfev,
         )
     except (ValueError, np.linalg.LinAlgError):
         return None
     return (float(res.cost), res.x, res.jac) if np.isfinite(res.cost) else None
 
 
-def _ml_jitter(r, sig):
-    """Maximum-likelihood jitter s >= 0 for residuals r with reported errors sig (1-D, bounded)."""
+def _ml_jitter(r, sig, dof=False):
+    """Maximum-likelihood jitter s >= 0 for residuals r with reported errors sig (1-D, bounded).
+    dof=True inflates residuals by sqrt(N/(N-6)) (6 fitted Keplerian parameters), removing most
+    of the low bias of the ML variance for few points; the returned NLL uses the raw residuals."""
     from scipy.optimize import minimize_scalar
+
+    if dof:
+        n = len(r)
+        r_fit = r * np.sqrt(n / max(n - 6, 1))
+        res = minimize_scalar(lambda s_: 0.5 * np.sum(r_fit**2 / (sig**2 + s_**2) + np.log(sig**2 + s_**2)),
+                              bounds=(0.0, 20.0), method="bounded", options={"xatol": 1e-3})
+        v = sig**2 + res.x**2
+        return float(res.x), float(0.5 * np.sum(r * r / v + np.log(v)))
 
     def nll(s_):
         v = sig**2 + s_**2
@@ -262,17 +281,22 @@ def fit_star(x_star: np.ndarray, cfg: dict | None = None) -> np.ndarray:
     width = 1.0 / span
     peaks = top_peaks(gls_power(t, y, w / w.sum()), separation=width, n=int(cfg["n_peaks"]))
     fits = []  # (chi2 cost, x, jac, f_lo, f_hi)
+    fw, nfev = float(cfg["freq_window"]), int(cfg["max_nfev"])
     for freq in candidates(peaks, separation=width, yearly=bool(cfg["yearly_aliases"])):
-        f_lo = max(freq - FREQ_WINDOW * width, 0.5 * FREQ_MIN)
-        f_hi = freq + FREQ_WINDOW * width
-        for x0 in _starts_for_period(t, y, w, 1.0 / freq):
-            fit = refine(t, y, sig_eff, x0, f_lo, f_hi)
+        f_lo = max(freq - fw * width, 0.5 * FREQ_MIN)
+        f_hi = freq + fw * width
+        for x0 in _starts_for_period(t, y, w, 1.0 / freq, ext=bool(cfg["e_grid_ext"]),
+                                     n_starts=int(cfg["n_starts"])):
+            fit = refine(t, y, sig_eff, x0, f_lo, f_hi, max_nfev=nfev)
             if fit is not None:
                 fits.append((fit[0], fit[1], fit[2], f_lo, f_hi))
     if not fits:
         return np.array([-np.log10(peaks[0]), 0.0, 0.0])
 
-    plain = not (cfg["jitter_fit"] or cfg["occam_weight"] or cfg["bound_penalty"])
+    occ_w = cfg["occam_weight"]
+    if cfg.get("occam_weight_sparse") is not None and len(t) <= int(cfg["sparse_nobs"]):
+        occ_w = cfg["occam_weight_sparse"]
+    plain = not (cfg["jitter_fit"] or occ_w or cfg["bound_penalty"])
     if plain:  # exactly the baseline decision rule
         best_x = min(fits, key=lambda z: z[0])[1]
     else:
@@ -283,20 +307,30 @@ def fit_star(x_star: np.ndarray, cfg: dict | None = None) -> np.ndarray:
         for cost, x, jac, f_lo, f_hi in fits[: int(cfg["n_rescore"])]:
             if cfg["jitter_fit"]:
                 for _ in range(2):  # alternate: ML jitter given orbit, orbit given jitter
-                    s_j, _ = _ml_jitter(y - _model(x, t), sig)
+                    s_j, _ = _ml_jitter(y - _model(x, t), sig, dof=bool(cfg["jitter_dof"]))
                     se = np.sqrt(sig**2 + s_j**2)
-                    fit = refine(t, y, se, x, f_lo, f_hi)
+                    fit = refine(t, y, se, x, f_lo, f_hi, max_nfev=nfev)
                     if fit is None:
                         break
                     cost, x, jac = fit
-                s_j, nll = _ml_jitter(y - _model(x, t), sig)
+                s_j, nll = _ml_jitter(y - _model(x, t), sig, dof=bool(cfg["jitter_dof"]))
             else:
                 nll = cost  # chi2/2 at the fixed jitter guess
             score = nll
-            if cfg["occam_weight"]:
-                sign, logdet = np.linalg.slogdet(jac.T @ jac + 1e-9 * np.eye(jac.shape[1]))
-                if sign > 0:
-                    score += cfg["occam_weight"] * 0.5 * logdet
+            if occ_w:
+                F = jac.T @ jac + 1e-9 * np.eye(jac.shape[1])
+                if cfg["occam_mode"] == "pk":
+                    try:  # marginal covariance of (lnP, lnK) only: does not penalise sharp eccentric fits
+                        cov = np.linalg.inv(F)[:2, :2]
+                        sign, logdet_cov = np.linalg.slogdet(cov)
+                        if sign > 0:
+                            score += occ_w * (-0.5) * logdet_cov
+                    except np.linalg.LinAlgError:
+                        pass
+                else:
+                    sign, logdet = np.linalg.slogdet(F)
+                    if sign > 0:
+                        score += occ_w * 0.5 * logdet
             if cfg["bound_penalty"]:
                 lnp, lnk = x[0], x[1]
                 out = max(0.0, lp_lo - lnp, lnp - lp_hi) + max(0.0, lk_lo - lnk, lnk - lk_hi)

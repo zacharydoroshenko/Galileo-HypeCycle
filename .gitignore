@@ -7,3 +7,6 @@ data/
 *.zip
 .env
 package_exo/
+EMAIL.md
+*.key
+.openai_key

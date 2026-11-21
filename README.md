@@ -40,6 +40,11 @@ Speed is about 2 CPU-s per star, so roughly 10k stars fit in the scoring limit w
 - `true_anomaly_table` replaces Kepler solves in the grid stages (max error 5e-4 rad), giving a 1.6× speedup. The polish step uses exact solves.
 - Pool: `fork` on Linux (sandbox), `spawn` on macOS (fork crashes Accelerate-linked children), and `ProcessPoolExecutor` so dead workers raise instead of hanging. Any failure falls back to serial. CONFIG is shipped with each task.
 
+## Leaderboard
+- Page: https://siderius.scitra.org/hackathon/leaderboard?view=projector (JS-rendered, provisional, reviewed scores only)
+- Terminal: `python3 tools/leaderboard.py` (polls https://submit.siderius.scitra.org/api/leaderboard, the page's own JSON feed)
+- We are **G2-15 "Hype Cycle"**. The leaderboard scores on *validation*, so use it as a check, never as a tuning signal.
+
 ## Setup (new teammate: run these three lines)
 ```sh
 uv venv -p 3.12 .venv && uv pip install -p .venv numpy scipy pandas h5py matplotlib scikit-learn threadpoolctl
