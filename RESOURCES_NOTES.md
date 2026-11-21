@@ -4,6 +4,12 @@ Sources: the event email, the hackathon README + report template README, the tas
 (TASK_CARD, RELEASE_CONTRACT, simulator, metric/health plugins, analysis/), the official example
 submission, the SIDERIUS master code, the TESS warm-up, and `/data/galileo/README.md` on the GPU box.
 
+## DEADLINES (organizers on Discord, ~14:42): extended by 30 min because of the delayed emails
+- **Model uploads + GPU access end 4:30 pm PST.** Everything needed from the GPU box is already in `results/` on the laptop.
+- **Report PDF due 5:00 pm PST** (https://submit.siderius.scitra.org/track2/reports, linked to submission **16**).
+- Suggested report timeline: insights + §1/§5/§6 prose by ~4:00 → abstract/title + table cut to ≤6 rows by ~4:30 →
+  4-page check, compile, upload by ~4:45 (15 min buffer).
+
 ## UPDATE FOR PRISHA (~14:35): hidden-test result and how to frame it
 
 **Upload #1 = submission 16 was scored on the hidden test: 0.4725** (status `scored`, review passed, on the live
