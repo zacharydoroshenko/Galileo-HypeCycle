@@ -7,7 +7,9 @@ by default, i.e. the baseline decision rule; identical to initial_algorithm.py).
 final plugin with the SELECTED settings baked into CONFIG:
 
     occam_weight = 0.5   Laplace evidence term 0.5*logdet(J^T J) in the candidate score
-    k_debias_c   = 6.95  low-SNR amplitude-bias correction K/sqrt(1 + c/SNR^2); c fitted on 6,000 TRAIN
+    k_debias_snr = "rms" SNR^2 = 2 sum((model - mean)^2) / noise^2: the realised signal at the observed times
+                         (eccentric orbits with an unsampled periastron get a stronger correction)
+    k_debias_c   = 8.88  low-SNR amplitude-bias correction K/sqrt(1 + c/SNR^2); c fitted on 6,000 TRAIN
                          stars disjoint from every evaluation set (train/selection/make_calib_preds.py +
                          k_calib.py: maximise successes on half A; held-out half B +54/-28)
 
@@ -25,7 +27,7 @@ from pathlib import Path
 
 import numpy as np
 
-SELECTED = {"occam_weight": 0.5, "k_debias_c": 6.95}
+SELECTED = {"occam_weight": 0.5, "k_debias_c": 8.88, "k_debias_snr": "rms"}
 
 
 def main():

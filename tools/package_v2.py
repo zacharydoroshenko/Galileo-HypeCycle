@@ -40,7 +40,8 @@ def stage():
     shutil.copy(src, STAGE / "train" / "rv_v2_source.py")
     shutil.copy(ROOT / "train" / "train_v2.py", STAGE / "train" / "train_v2.py")
     for f in ["confirm_v2.py", "ablate_v2.py", "make_eval_sets.py", "make_confirm_sets.py", "evaluate.py",
-              "make_sparse_v2.py", "make_calib_preds.py", "k_calib.py"]:
+              "make_sparse_v2.py", "make_calib_preds.py", "k_calib.py", "calib_rms.py", "make_fresh_sets.py",
+              "make_fresh_b.py", "k_calib_aug.py"]:
         shutil.copy(ROOT / "tools" / f, STAGE / "train" / "selection" / f)
     (STAGE / "submission.json").write_text(json.dumps(MANIFEST, indent=2) + "\n")
 
