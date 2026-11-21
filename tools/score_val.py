@@ -35,7 +35,12 @@ if __name__ == "__main__":
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     if a.plain:
-        mod.CONFIG.update(jitter_fit=False, occam_weight=0.0, bound_penalty=0.0, yearly_aliases=False, n_peaks=3)
+        # reset EVERY switch to the source defaults (= official baseline decision rule)
+        dspec = importlib.util.spec_from_file_location("rv_v2_defaults", ROOT / "solution" / "rv_v2.py")
+        dmod = importlib.util.module_from_spec(dspec)
+        dspec.loader.exec_module(dmod)
+        mod.CONFIG.clear()
+        mod.CONFIG.update(dmod.CONFIG)
     import ast
     for kv in a.set:
         k, v = kv.split("=", 1)

@@ -1,0 +1,6 @@
+{"config": "plain", "std1000": 0.582, "std1000_gain_loss": [0, 0], "sparse600": 0.33, "sparse600_gain_loss": [0, 0], "sec": 65.30067205429077}
+{"config": "occam0.5", "std1000": 0.594, "std1000_gain_loss": [17, 5], "sparse600": 0.34833333333333333, "sparse600_gain_loss": [11, 0], "sec": 66.28448605537415}
+{"config": "occam1", "std1000": 0.594, "std1000_gain_loss": [19, 7], "sparse600": 0.345, "sparse600_gain_loss": [13, 4], "sec": 63.52501130104065}
+{"config": "occam1.5", "std1000": 0.592, "std1000_gain_loss": [20, 10], "sparse600": 0.3383333333333333, "sparse600_gain_loss": [14, 9], "sec": 65.516930103302}
+{"config": "occam2", "std1000": 0.592, "std1000_gain_loss": [20, 10], "sparse600": 0.3383333333333333, "sparse600_gain_loss": [14, 9], "sec": 66.04520297050476}
+{"config": "occam1+jit", "std1000": 0.592, "std1000_gain_loss": [29, 19], "sparse600": 0.345, "sparse600_gain_loss": [22, 13], "sec": 84.75784707069397}

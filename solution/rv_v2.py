@@ -91,6 +91,8 @@ CONFIG = {
     "jitter_dof": False,       # ML jitter with N/(N-6) residual correction (less biased for few points)
     "k_debias_c": 0.0,         # K_out = K / sqrt(1 + c / snr^2), snr = K sqrt(N) / sig_eff (low-SNR ML K bias)
     "k_debias_floor": 0.5,
+    "k_debias_noise": "assumed",  # "assumed": sig_eff^2 = mean(sigma^2) + 2^2; "residual": RMS residual * N/(N-6)
+    "return_diag": False,         # offline analysis only: predict returns [N, 4], col 3 = residual noise (m/s)
     "P_bounds": [1.0, 1000.0],   # overwritten from train labels by train/train.py
     "K_bounds": [2.0, 100.0],
 }
@@ -293,7 +295,7 @@ def fit_star(x_star: np.ndarray, cfg: dict | None = None) -> np.ndarray:
             if fit is not None:
                 fits.append((fit[0], fit[1], fit[2], f_lo, f_hi))
     if not fits:
-        return np.array([-np.log10(peaks[0]), 0.0, 0.0])
+        return np.array([-np.log10(peaks[0]), 0.0, 0.0] + ([0.0] if cfg.get("return_diag") else []))
 
     occ_w = cfg["occam_weight"]
     if cfg.get("occam_weight_sparse") is not None and len(t) <= int(cfg["sparse_nobs"]):
@@ -340,12 +342,19 @@ def fit_star(x_star: np.ndarray, cfg: dict | None = None) -> np.ndarray:
             if score < best_score:
                 best_score, best_x = score, x
     period, k_amp, e, _, _, _ = _unpack(best_x)
+    n_pts = len(t)
+    resid = y - _model(best_x, t)
+    noise_res2 = float(np.sum(resid**2)) / max(n_pts - 6, 1)  # unbiased-ish residual variance (6 fitted params)
+    noise2 = noise_res2 if cfg.get("k_debias_noise") == "residual" else float(np.mean(sig_eff**2))
     c = float(cfg.get("k_debias_c", 0.0))
     if c > 0.0:
         # ML amplitude is biased high at low SNR: E[K_hat^2] ~ K^2 + c sig_eff^2 / N. c is fitted on TRAIN stars.
-        snr2 = k_amp**2 * len(t) / float(np.mean(sig_eff**2))
+        snr2 = k_amp**2 * n_pts / max(noise2, 1e-12)
         k_amp = k_amp * max(1.0 / np.sqrt(1.0 + c / max(snr2, 1e-9)), float(cfg.get("k_debias_floor", 0.5)))
-    return np.array([np.log10(period), np.log10(k_amp), float(np.clip(e, 0.0, E_MAX))])
+    out = [np.log10(period), np.log10(k_amp), float(np.clip(e, 0.0, E_MAX))]
+    if cfg.get("return_diag"):
+        out.append(np.sqrt(noise_res2))
+    return np.array(out)
 
 
 def _fit_one(arg):
@@ -356,7 +365,7 @@ def _fit_one(arg):
             return out
     except Exception:
         pass
-    return np.array([1.0, 1.0, 0.1])
+    return np.array([1.0, 1.0, 0.1] + ([0.0] if cfg.get("return_diag") else []))
 
 
 def _worker_init():

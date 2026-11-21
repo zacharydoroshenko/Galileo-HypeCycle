@@ -1,0 +1,7 @@
+{"config": "plain", "overrides": {}, "standard": 0.5933333333333334, "sparse15": 0.38, "hi_e": 0.5066666666666667, "mean": 0.49333333333333335, "sec": 13.537171999613443}
+{"config": "jitter", "overrides": {"jitter_fit": true}, "standard": 0.6, "sparse15": 0.37333333333333335, "hi_e": 0.52, "mean": 0.4977777777777778, "sec": 62.57984193166097}
+{"config": "occam", "overrides": {"occam_weight": 1.0}, "standard": 0.6066666666666667, "sparse15": 0.39666666666666667, "hi_e": 0.5066666666666667, "mean": 0.5033333333333334, "sec": 13.424994627634684}
+{"config": "yearly", "overrides": {"yearly_aliases": true}, "standard": 0.5933333333333334, "sparse15": 0.37666666666666665, "hi_e": 0.51, "mean": 0.49333333333333335, "sec": 39.83029294013977}
+{"config": "bounds", "overrides": {"bound_penalty": 5.0}, "standard": 0.5933333333333334, "sparse15": 0.38, "hi_e": 0.5066666666666667, "mean": 0.49333333333333335, "sec": 13.125178257624308}
+{"config": "peaks5", "overrides": {"n_peaks": 5}, "standard": 0.5966666666666667, "sparse15": 0.38, "hi_e": 0.51, "mean": 0.4955555555555556, "sec": 23.788379271825153}
+{"config": "all", "overrides": {"jitter_fit": true, "occam_weight": 1.0, "yearly_aliases": true, "bound_penalty": 5.0}, "standard": 0.6, "sparse15": 0.39, "hi_e": 0.5166666666666667, "mean": 0.5022222222222222, "sec": 42.41512727737427}
