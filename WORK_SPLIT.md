@@ -33,5 +33,5 @@ Both of us write the report's core arguments ourselves (AI may only organize and
 ## Rules to keep in mind
 - Tune only on `data/exo/train/`. `val/` is only for a one-time check (`tools/score_val.py`), never for tuning.
 - No new pip installs; numpy and scipy only in the plugin; `kind: "algorithm"`, with no weight files.
-- 5 uploads total (updated rules; 1 used); an upload that fails evaluation still counts.
+- 5 uploads total (updated rules); **2 used** (submissions 16 and 72; 72 is final), 3 unused.
 - No access code, API key or GPU IP in any committed file, the report or the ZIP.

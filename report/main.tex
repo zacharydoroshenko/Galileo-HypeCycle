@@ -35,7 +35,7 @@
   {\fbox{\parbox[c][3.2cm][c]{0.95\linewidth}{\centering\textcolor{red}{Missing \texttt{\detokenize{#1}}\\#2}}}}}
 
 \title{\fillin{BOTH}{Title stating the specific finding, written last}}
-\author{Hype Cycle \\ Prisha Maiti (University of California, San Diego) \quad
+\author{Hype Cycle \\ Prisha Maiti (UC San Diego, Hal\i c\i o\u{g}lu Data Science Institute) \quad
 Zachary Doroshenko (UC San Diego, Computer Science and Engineering)
 \\ Team ID: G2-15 \quad Task slug: \texttt{exoplanet-orbits}}
 
@@ -153,7 +153,7 @@ R06--08, R13 & Test four specific hypotheses (Occam hurts eccentric fits; search
 R09--11 & 26\% of baseline failures have the right $P$ but $K$ off by $>$10\%; ML $K$ is biased high at low SNR & $K/\sqrt{1+c/\mathrm{SNR}^2}$, $c$ fitted on 6,000 disjoint train stars; refit on augmented train variants &
   vs.\ Occam only: +70/$-$39 on 4,000 held-out std stars ($p\approx$0.004); same $c$ (6.93) on std and 15-obs stars & Final model = Occam 0.5 + $c$=6.95 \\
 R12 & Confirm the final model before uploading & One-time validation check + official \texttt{headroom.py} &
-  0.4748 / 0.6035 / 0.311 / 0.381 (88.6\% of the Fisher benchmark; baseline 88.0\%) & Sub.\ 16 (0.4725); then R21 realised SNR (+66/$-$25, replicated) $\to$ sub.\ 72 (0.474) \\
+  0.4748 / 0.6035 / 0.311 / 0.381 (88.6\% of the Fisher benchmark; baseline 88.0\%) & Sub.\ 16 (0.4725); then R21 realised SNR (+66/$-$25, replicated) $\to$ sub.\ 72 (0.474); 2 of 5 uploads used \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -204,7 +204,7 @@ Final model (sub.\ 72) & hidden test & 0.4740 & n/a & n/a & n/a & -- \\
 Sub.\ 16 ($K$-based SNR) & val./hidden & .4748/.4725 & 0.6035 & 0.311 & 0.381 & 0.31 \\
 Alternative: Occam only & validation & 0.4718 & 0.601 & 0.309 & 0.376 & 0.31 \\
 Alternative: $K$-debias only & validation & 0.4735 & 0.599 & 0.318 & 0.378 & 0.31 \\
-Fisher ceiling & validation & 0.536 & 0.657 & 0.357 & 0.472 & -- \\
+Fisher benchmark & validation & 0.536 & 0.657 & 0.357 & 0.472 & -- \\
 \bottomrule
 \end{tabularx}
 \end{table}

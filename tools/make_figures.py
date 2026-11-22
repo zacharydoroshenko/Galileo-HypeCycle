@@ -1,7 +1,7 @@
 """Report figures from the official analysis/headroom.py outputs (validation = held-out check).
 
     .venv/bin/python tools/make_figures.py [--baseline results/headroom_baseline.json]
-                                           [--final results/headroom_final.json] [--out report/figs]
+                                           [--final results/headroom_final72.json] [--out report/figs]
 
 Writes:
   report/figs/success_vs_ceiling.pdf  success_rate by group: official baseline vs final, with the Fisher ceiling
@@ -68,7 +68,7 @@ def success_vs_ceiling(base, final, out):
     style(ax)
     handles = [plt.Rectangle((0, 0), 1, 1, color=C_BASE), plt.Rectangle((0, 0), 1, 1, color=C_FINAL),
                plt.Line2D([], [], color=INK, linewidth=1.0, linestyle=(0, (3, 1.5)))]
-    ax.legend(handles, ["Official baseline", "Final (Occam + K-debias)", "Fisher ceiling"],
+    ax.legend(handles, ["Official baseline", "Final (Occam + K-debias)", "Fisher benchmark"],
               loc="upper right", frameon=False, ncol=1, handlelength=1.6, borderaxespad=0.1)
     fig.tight_layout(pad=0.3)
     fig.savefig(out)
@@ -110,7 +110,7 @@ def failure_breakdown(base, final, out, group="all"):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--baseline", type=Path, default=ROOT / "results/headroom_baseline.json")
-    ap.add_argument("--final", type=Path, default=ROOT / "results/headroom_final.json")
+    ap.add_argument("--final", type=Path, default=ROOT / "results/headroom_final72.json")
     ap.add_argument("--out", type=Path, default=ROOT / "report/figs")
     a = ap.parse_args()
     base, final = json.loads(a.baseline.read_text()), json.loads(a.final.read_text())
