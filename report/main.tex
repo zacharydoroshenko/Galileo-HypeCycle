@@ -35,7 +35,7 @@
   {\fbox{\parbox[c][3.2cm][c]{0.95\linewidth}{\centering\textcolor{red}{Missing \texttt{\detokenize{#1}}\\#2}}}}}
 
 \title{\fillin{BOTH}{Title stating the specific finding, written last}}
-\author{Hype Cycle \\ Prisha Maiti\fillin{PRISHA}{affiliation} \quad
+\author{Hype Cycle \\ Prisha Maiti (University of California, San Diego) \quad
 Zachary Doroshenko (UC San Diego, Computer Science and Engineering)
 \\ Team ID: G2-15 \quad Task slug: \texttt{exoplanet-orbits}}
 
@@ -94,14 +94,10 @@ of the baseline's alias failures does the true orbit fit the data better
 than the baseline's answer, so the data genuinely prefer the alias at this
 noise level. A perfect period search adds only +0.0075 (task card) and
 +0.011 for our final model, and four search changes we tried moved 0 of
-1,000 stars (R07). Two caveats: the Fisher value is a \emph{benchmark}
-rather than a strict maximum. It is local (it assumes the right peak was
-found and ignores aliases, which makes it optimistic) and applies to
-unbiased estimators (a biased estimator, such as our $K$ correction, can
-beat it on individual stars). Also, with 4,000 test stars one binomial
-standard error is $\approx$0.8 points, so differences between methods are
-small compared with the noise in a single score.
-In short, the noise in the data, not the method, caps the achievable
+1,000 stars (R07). The Fisher value is a \emph{benchmark}, not a strict maximum: it ignores
+aliases (optimistic) and assumes an unbiased estimator (a biased one, like
+our $K$ correction, can beat it on some stars). With 4,000 test stars, one
+standard error of a score is $\approx$0.8 points. In short, the noise in the data, not the method, caps the achievable
 score: an unbiased estimator that always finds the right orbit is expected
 to recover only about 54\% of the planets, so the headroom over the baseline
 is about 6 points. We therefore
@@ -222,8 +218,8 @@ Fisher ceiling & validation & 0.536 & 0.657 & 0.357 & 0.472 & -- \\
 \figorbox{figs/failure_breakdown.pdf}{Failure classes (headroom.py): K-off, 1-day alias, yearly alias, harmonic, other}
 \end{minipage}
 \caption{Validation (held-out check). \textbf{Left:} success by group vs.\
-the Fisher benchmark (dashed). Every change from the baseline ($-$0.5 to
-+0.6 pts) is within one standard error (0.8--1.5 pts): no significant
+the Fisher benchmark (dashed). Every change from the baseline ($-$0.4 to
++1.0 pts) is within one standard error (0.8--1.5 pts): no significant
 improvement on validation alone; our evidence is paired (Table~\ref{tab:trajectory}).
 \textbf{Right:} failures mostly move between classes rather than disappear.}
 \label{fig:main}
@@ -232,18 +228,27 @@ improvement on validation alone; our evidence is paired (Table~\ref{tab:trajecto
 % ===========================================================================
 \section{Key insights}
 % Owner: BOTH. Max three. Claim / evidence / limitation. Our own words.
-\textbf{Insight 1.} \emph{Claim:} \fillin{BOTH}{}
-\emph{Evidence:} \fillin{BOTH}{run/table/figure}
-\emph{Limitation:} \fillin{BOTH}{}
+\textbf{1. Choosing among candidates matters more than searching for them.}
+\emph{Evidence:} four search changes moved 0 of 1,000 stars (R07); the Occam
+choice cut 1-day-alias failures from 177 to 114 (Fig.~\ref{fig:main}), and
+removing it for eccentric fits lost up to 37 stars net (R14). \emph{Limitation:}
+yearly-alias failures did not fall, and Occam costs 5--7 true high-$e$ stars.
 
-\textbf{Insight 2.} \emph{Claim:} \fillin{BOTH}{candidate topic: gains on
-train proxies (R03) shrank on validation (R04); why proxies mislead}
-\emph{Evidence:} \fillin{BOTH}{}
-\emph{Limitation:} \fillin{BOTH}{}
+\textbf{2. The amplitude estimate is biased high at low SNR, and correcting it
+improves accuracy, not just the score.} \emph{Evidence:} the median $\log_{10}K$
+error is +0.04 dex ($\approx$+10\%, the size of the success box) at SNR 5--12
+(R09); the realised-SNR correction replicated on independent stars (+18/$-$7,
+$p$=0.04, R21) and lowered the threshold-free median $K$ error from 0.079 to
+0.073. \emph{Limitation:} $c$ is fitted to the simulator's jitter; with more
+noise the optimal $c$ rises ($\approx$20, R11).
 
-\textbf{Insight 3 (optional).} \emph{Claim:} \fillin{BOTH}{}
-\emph{Evidence:} \fillin{BOTH}{}
-\emph{Limitation:} \fillin{BOTH}{}
+\textbf{3. With many variants tested, test sets must mimic the sampling and
+borderline wins must be replicated.} \emph{Evidence:} we tested over 20
+variants (Table~\ref{tab:trajectory}). Occam's +1.8-point gain on our first
+sparse proxy fell to +0.1 on validation (spans 4.5\% too long); a faithful
+proxy reproduces the real sparse baseline exactly (0.375). Jitter fitting passed once ($p$=0.05, R14) but failed replication
+(+27/$-$31, R16). \emph{Limitation:} our augmented sets reuse train stars
+(no simulated stars), so they cannot represent $e>0.6$.
 
 % ===========================================================================
 \section{Limitations \& next experiment}
@@ -253,9 +258,8 @@ caps the achievable score near the Fisher benchmark, so our gains are a few
 stars and are not significant on validation alone (Fig.~\ref{fig:main}).
 Our selection data also cannot represent the high-eccentricity group (no
 training star has $e>0.6$, and simulating such stars is outside the rules),
-which is where the Occam term costs 5--7 stars; and all stars are
-simulated with white Gaussian noise, without stellar activity or
-instrument offsets. \emph{Next experiment:} choose the period from a dense
+which is where the Occam term costs 5--7 stars; and the data are
+simulated (white noise, no stellar activity). \emph{Next experiment:} choose the period from a dense
 posterior over $(P, e, \omega, M_0)$ with a prior on $K$, instead of a
 single best fit per peak. If it closes part of the $\approx$6-point gap to
 the benchmark, the gap is partly a choice problem; if not, the remaining
@@ -268,18 +272,17 @@ limit.
 \textbf{Reproduce.} \texttt{train\_command}:
 \texttt{python train/train\_v2.py --data\_dir "\$DATA\_DIR" --seed "\$SEED" --out final\_model.py}.
 Environment: SIDERIUS v1.1.0, Python 3.12, NumPy, SciPy (no other
-dependencies). \texttt{kind=algorithm}, seed 0 (the algorithm draws no
-random numbers; the seed is recorded for the interface);
-\texttt{initial\_algorithm.py} is the unmodified switchable source, and the
-final plugin bakes in the selected settings. Data use: only
+dependencies). \texttt{kind=algorithm}, seed 0 (no randomness);
+\texttt{initial\_algorithm.py} is the switchable source and the final
+plugin bakes in the selected settings. Data use: only
 \texttt{train\_inputs.npy}/\texttt{train\_targets.npy} for selection; no
 simulated stars; validation used once as a check. Code and complete logs:
 \url{https://github.com/zacharydoroshenko/Galileo-HypeCycle} at commit cbf8ca3 (final submitted code).
 
 \textbf{Contributions.} Zachary Doroshenko: solver and all experiments
-(ablations, paired confirmations, proxy sets, $K$-bias calibration, late
-replications), official \texttt{headroom.py} analysis on the GPU machine,
-packaging and uploads, method and decision-trail text.
+(ablations, paired tests, proxy sets, $K$-bias calibration, replications),
+\texttt{headroom.py} analysis, packaging and uploads, method and
+decision-trail text.
 % ZACH: confirm or edit your line.
 Prisha Maiti: problem overview and team work plan, organizer coordination
 (deadlines, upload budget, scoring rules), submission record and
@@ -293,11 +296,9 @@ CPU-based fitting algorithm with no model to train. Claude Code helped
 write and debug the solver, evaluation and plotting scripts, organise the
 experiment logs, and turn our notes into formal report wording. The
 hypotheses, insights and limitations are our own. We verified its outputs
-by reproducing the official baseline to four decimals with our metric code,
-accepting changes only on paired tests on held-out train stars (with
-replication for late changes), checking packaging locally, and confirming
-that the organizers' scoring matched our runtime estimate (155\,s vs.\
-161\,s).
+by reproducing the official baseline to four decimals, accepting changes
+only on paired (and, late, replicated) tests on held-out train stars, and
+checking packaging locally.
 
 % References may extend beyond the four-page body. Do not add narrative appendices.
 \clearpage
