@@ -34,39 +34,44 @@
   \IfFileExists{#1}{\includegraphics[width=\linewidth]{#1}}%
   {\fbox{\parbox[c][3.2cm][c]{0.95\linewidth}{\centering\textcolor{red}{Missing \texttt{\detokenize{#1}}\\#2}}}}}
 
-\title{\fillin{BOTH}{Title stating the specific finding, written last}}
-\author{Hype Cycle \\ Prisha Maiti (UC San Diego, Hal\i c\i o\u{g}lu Data Science Institute) \\
-Zachary Doroshenko (UC San Diego, Computer Science and Engineering)
-\\ Team ID: G2-15 \quad Task slug: \texttt{exoplanet-orbits}}
+\title{Aliases Are Not the Bottleneck: Noise Limits Exoplanet Orbit Recovery from Sparse Radial Velocities}
+\author{Prisha Maiti \\ Hal\i c\i o\u{g}lu Data Science Institute \\ UC San Diego
+\And Zachary Doroshenko \\ Computer Science and Engineering \\ UC San Diego
+\AND Team Hype Cycle \quad Team ID: G2-15 \quad Task slug: \texttt{exoplanet-orbits}}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-\fillin{BOTH}{Write last, 4--6 sentences: the scientific question (recover
-period $P$ and semi-amplitude $K$ of a single planet from sparse radial
-velocities); the initial idea; the most informative experiment; the final
-finding with its main limitation. Quote the hidden-test score and final
-submission ID.}
+We recover the period $P$ and amplitude $K$ of a single planet from sparse,
+noisy radial velocities, where a planet counts as found only if $P$ is
+within 1\% and $K$ within 10\%. We expected daily and yearly period aliases
+to be the main fixable bottleneck, but the official Fisher analysis and our
+experiments show that noise, not search, limits performance: four search
+changes moved 0 of 1,000 stars, and most alias failures are ones the data
+genuinely prefer. Our gains come instead from choosing among candidate
+periods with an Occam term (1-day-alias failures $-$36\%) and correcting
+the upward bias of $K$ at low signal-to-noise (median $K$ error
+0.079$\to$0.073), each accepted only on paired, replicated tests on
+held-out train stars. Our final model (submission 72) scores 0.4740 on the
+hidden test and 0.4773 on validation (baseline 0.4715; 89\% of the Fisher
+benchmark), a gain too small to be significant on validation alone.
 \end{abstract}
 
 % ===========================================================================
 \section{Scientific goal \& initial hypothesis}
 % Owner: PRISHA (drafts), ZACH (checks physics)
-An orbiting planet makes its star wobble around their common centre of
-mass; the radial-velocity (RV) method measures the star's line-of-sight
-velocity from the Doppler shift of its spectral lines, and remains the main
-way to measure planet masses. For one planet, the velocity follows a
-Keplerian curve set by the period $P$, the semi-amplitude $K$ (half the
-peak-to-peak swing) and the eccentricity $e$ (0 gives a sine wave; high $e$
-gives a brief spike at periastron), plus nuisance terms for orientation,
-phase and offset. The challenge~\cite{challenge} is the inverse problem:
-recover $P$, $K$ and $e$ from a few dozen noisy night-time measurements.
-It is hard because six parameters must be fitted from few points; the
-noise (reported errors plus unreported stellar jitter) is comparable to the
-signal; nightly and seasonal sampling create daily and yearly
-\emph{aliases}, false periods that fit as well as the true one; and eccentric
-spikes are easily missed by sparse sampling.
+An orbiting planet makes its star wobble; the radial-velocity (RV) method
+measures the star's line-of-sight velocity from the Doppler shift of its
+spectrum. For one planet the velocity is a Keplerian curve set by the period
+$P$, the semi-amplitude $K$ and the eccentricity $e$ (0: a sine wave; high
+$e$: a brief spike at periastron), plus nuisance terms. The
+challenge~\cite{challenge} is to recover $P$, $K$ and $e$ from a few dozen
+noisy night-time measurements. Six parameters must be fitted from few
+points, the noise (reported errors plus unreported stellar jitter) is
+comparable to the signal, nightly and seasonal sampling create daily and
+yearly \emph{aliases} (false periods that fit as well as the true one), and
+eccentric spikes are easily missed.
 
 \textbf{Task facts (from the official task card, \texttt{TASK\_CARD.md} in the task package~\cite{galileo2026}).}
 Metric: \texttt{success\_rate} (higher is better), the share of stars with
@@ -78,32 +83,21 @@ instead of 30--60). The official baseline scores 0.4715 on validation.
 \textbf{Why a high success rate is out of reach.}
 % Facts with sources (TASK_CARD "Data" and "Difficulty", official analysis/headroom.py,
 % results/headroom_*.json). PRISHA/ZACH: rephrase in our own words and keep the caveat.
-The limit comes from the data, not from the method. Per-point noise is
-comparable to the signal: reported errors are 1--5\,m/s plus an unreported
-stellar jitter of 1--3\,m/s, while $K$ is log-uniform in 2--100\,m/s, so
-23.7\% of validation stars have $K<5$\,m/s, sampled 15--60 times. The success
-box is strict ($P$ within 1\%, $K$ within 10\%). The official Fisher
-(Cram\'er--Rao) analysis, which propagates the true noise to the
-uncertainty of $(\ln P, \ln K)$ at the true orbit, gives each star a
-probability of landing in that box: 20.3\% of validation stars have
-probability $<0.1$ (no method can be expected to recover them), and only
-31.4\% have probability $>0.9$, where the baseline already succeeds 97.7\%
-of the time (our final model: 97.9\%). The mean is 0.536 overall (in-dist.\ 0.657, high-$e$ 0.357,
-sparse 0.472). Most alias failures are not search errors either: in only 7
-of the baseline's alias failures does the true orbit fit the data better
-than the baseline's answer, so the data genuinely prefer the alias at this
-noise level. A perfect period search adds only +0.0075 (task card) and
-+0.011 for our final model, and four search changes we tried moved 0 of
-1,000 stars (R07). The Fisher value is a \emph{benchmark}, not a strict maximum: it ignores
-aliases (optimistic) and assumes an unbiased estimator (a biased one, like
-our $K$ correction, can beat it on some stars). With 4,000 test stars, one
-standard error of a score is $\approx$0.8 points. In short, the noise in the data, not the method, caps the achievable
-score: an unbiased estimator that always finds the right orbit is expected
-to recover only about 54\% of the planets, so the headroom over the baseline
-is about 6 points. We therefore
-judge our changes by how much of that gap they close, and we measure them
-with paired comparisons on the same stars, which separate a real gain of a
-few stars from the sampling noise of a single score.
+The limit comes from the data, not from the method. Reported errors are
+1--5\,m/s plus 1--3\,m/s of unreported jitter, while $K$ is log-uniform in
+2--100\,m/s (23.7\% of validation stars have $K<5$\,m/s), sampled 15--60
+times. The official Fisher (Cram\'er--Rao) analysis turns the true noise
+into each star's probability of landing in the success box: 20.3\% of
+stars have probability $<0.1$ (no method can be expected to recover them),
+and only 31.4\% have $>0.9$, where the baseline already succeeds 97.7\% of
+the time (our final model: 97.9\%). The mean, 0.536 (in-dist.\ 0.657,
+high-$e$ 0.357, sparse 0.472), is a \emph{benchmark} rather than a strict
+maximum: it ignores aliases (optimistic) and assumes an unbiased estimator
+(a biased one, like our $K$ correction, can beat it on some stars). The
+headroom over the baseline is therefore about 6 points, while one standard
+error of a 4,000-star score is $\approx$0.8 points, so we judge changes by
+paired comparisons on the same stars, which separate a real gain of a few
+stars from sampling noise.
 
 \textbf{Initial hypothesis.} We expected period aliasing to be the main
 \emph{fixable} bottleneck: because the stars are observed only at night and only in
@@ -119,17 +113,12 @@ alias failures.
 % Owner: ZACH writes rows as runs finish; PRISHA keeps report/EXPERIMENT_LOG.md
 % in sync and writes the connecting prose.
 The evidence contradicted our initial hypothesis. The task card's analysis
-showed that a perfect period search would add only +0.0075, and that in
+showed that a perfect period search would add only +0.0075 and that in
 almost all alias failures the data genuinely prefer the alias; our own
-search changes later moved 0 of 1,000 stars (R07). The limiting factor is
-the noise in the data: measurement errors and stellar jitter are
-comparable to the signal, so for many stars the correct orbit cannot be
-distinguished from an alias or pinned down within the 10\% amplitude
-tolerance. Aliases still account for about a quarter of the baseline's
-failures, but they are a consequence of the noise rather than of the
-search. We therefore stopped working on the search and focused on how
-the method chooses among candidates and on the bias of the amplitude
-estimate at low signal-to-noise. Full logs:
+search changes moved 0 of 1,000 stars (R07). Aliases still cause about a
+quarter of the baseline's failures, but as a consequence of the noise
+rather than of the search. We therefore focused on how the method chooses
+among candidates and on the low-SNR bias of the amplitude estimate. Full logs:
 \url{https://github.com/zacharydoroshenko/Galileo-HypeCycle}
 (\texttt{report/EXPERIMENT\_LOG.md}, \texttt{results/}).
 
@@ -318,7 +307,7 @@ Lomb--Scargle periodogram. \emph{A\&A} 496:577--584, 2009.
 surveys. \emph{ApJ} 685:553, 2008.
 \bibitem{pricewhelan2017} A.~M.~Price-Whelan et al. The Joker: a custom Monte Carlo sampler for binary-star and
 exoplanet radial velocity data. \emph{ApJ} 837:20, 2017.
-\bibitem{rvsnr2024} The SNR of idealised radial velocity signals. \emph{MNRAS}, doi:10.1093/mnras/stae1423, 2024 (arXiv:2405.10776).
+\bibitem{rvsnr2024} D.~Kipping and X.-Y.~Wang. The SNR of idealised radial velocity signals. \emph{MNRAS}, doi:10.1093/mnras/stae1423, 2024 (arXiv:2405.10776).
 \bibitem{kipping2013} D.~M.~Kipping. Parametrizing the exoplanet eccentricity distribution with the beta
 distribution. \emph{MNRAS} 434:L51, 2013.
 \end{thebibliography}
