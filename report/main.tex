@@ -70,7 +70,7 @@ challenge~\cite{challenge} is to recover $P$, $K$ and $e$ from a few dozen
 noisy night-time measurements. Six parameters must be fitted from few
 points, the noise (reported errors plus unreported stellar jitter) is
 comparable to the signal, nightly and seasonal sampling create daily and
-yearly \emph{aliases} (false periods that fit as well as the true one), and
+yearly \emph{aliases}~\cite{dawson2010} (false periods that fit as well as the true one), and
 eccentric spikes are easily missed.
 
 \textbf{Task facts (from the official task card, \texttt{TASK\_CARD.md} in the task package~\cite{galileo2026}).}
@@ -140,8 +140,8 @@ R04--05 & Sanity check before spending an upload & One-time validation check of 
 R06--08, R13 & Test four specific hypotheses (Occam hurts eccentric fits; search misses optima; jitter bias; per-star noise for SNR) & \texttt{occam\_mode="pk"}; extra starts, $e$=0.92 grid, wider window; jitter fit with $N/(N-6)$; residual-noise SNR &
   None helped: pk std +2/$-$11 ($p$=0.02); search changes moved 0 of 1,000 std stars; jitter std +14/$-$28; residual SNR not significant ($p\ge$0.17) & All refuted; search is not the bottleneck \\
 R09--11 & 26\% of baseline failures have the right $P$ but $K$ off by $>$10\%; ML $K$ is biased high at low SNR & $K/\sqrt{1+c/\mathrm{SNR}^2}$, $c$ fitted on 6,000 disjoint train stars; refit on augmented train variants &
-  vs.\ Occam only: +70/$-$39 on 4,000 held-out std stars ($p\approx$0.004); same $c$ (6.93) on std and 15-obs stars & Final model = Occam 0.5 + $c$=6.95 \\
-R12 & Confirm the final model before uploading & One-time validation check + official \texttt{headroom.py} &
+  vs.\ Occam only: +70/$-$39 on 4,000 held-out std stars ($p\approx$0.004); same $c$ (6.93) on std and 15-obs stars & Sub.\ 16 = Occam 0.5 + $c$=6.95 \\
+R12 & Confirm candidate (sub.\ 16) before uploading & One-time validation check + official \texttt{headroom.py} &
   0.4748 / 0.6035 / 0.311 / 0.381 (88.6\% of the Fisher benchmark; baseline 88.0\%) & Sub.\ 16 (0.4725); then R21 realised SNR (+66/$-$25, replicated) $\to$ sub.\ 72 (0.474); 2 of 5 uploads used \\
 \bottomrule
 \end{tabularx}
@@ -168,11 +168,11 @@ the maximum-likelihood amplitude, $K_\mathrm{out}=K/\sqrt{1+c/\mathrm{SNR}^2}$, 
 is the signal actually realised by the fitted curve $m$ at the observed times (lower than $K^2N/\sigma_\mathrm{eff}^2$ when an eccentric
 periastron is unsampled~\cite{rvsnr2024}) and $c=8.88$ was fitted on 6,000 train stars disjoint from all evaluation sets. The submission is \texttt{kind=algorithm}:
 \texttt{train\_command} writes the plugin with these two constants (and the train-label $P$/$K$ ranges, unused) and
-learns no weights; it runs at 0.31\,CPU-s per star (161\,s for 4,000 stars with 14 workers).
+learns no weights; it runs at 0.31\,CPU-s per star (the organizers' sandbox scored 4,000 stars in 155\,s).
 
 \textbf{Binding.} Final submission ID: 72. ZIP SHA-256:
-\texttt{a5fddcbb\ldots 3f281} (full value in \texttt{report/SUBMISSIONS.md}). Git commit: cbf8ca3. Splits: selection on TRAIN-derived proxies only; validation used once
-as a held-out check; the leaderboard score is on the organizers' hidden test
+\texttt{a5fddcbb\ldots 3f281} (full value in \texttt{report/SUBMISSIONS.md}). Git commit: cbf8ca3. Splits: selection on TRAIN-derived proxies only; validation used only
+as a held-out check, never for selection; the leaderboard score is on the organizers' hidden test
 set. Health gates (finite outputs, $0\le e<1$, positive $P,K$, dispersion of
 $\log_{10}P \ge 0.05$ dex): all passed (local smoke tests on train and validation; the portal scored submissions 16 and 72, which requires the blocking gates to pass).
 
@@ -249,7 +249,7 @@ Our selection data also cannot represent the high-eccentricity group (no
 training star has $e>0.6$, and simulating such stars is outside the rules),
 which is where the Occam term costs 5--7 stars; and the data are
 simulated (white noise, no stellar activity). \emph{Next experiment:} choose the period from a dense
-posterior over $(P, e, \omega, M_0)$ with a prior on $K$, instead of a
+posterior~\cite{pricewhelan2017} over $(P, e, \omega, M_0)$ with a prior on $K$, instead of a
 single best fit per peak. If it closes part of the $\approx$6-point gap to
 the benchmark, the gap is partly a choice problem; if not, the remaining
 failures are genuinely ambiguous and our model is near the practical
@@ -260,12 +260,12 @@ limit.
 % Owner: PRISHA
 \textbf{Reproduce.} \texttt{train\_command}:
 \texttt{python train/train\_v2.py --data\_dir "\$DATA\_DIR" --seed "\$SEED" --out final\_model.py}.
-Environment: SIDERIUS v1.1.0, Python 3.12, NumPy, SciPy (no other
+Runtime environment (scoring sandbox): SIDERIUS v1.1.0, Python 3.12, NumPy, SciPy (no other
 dependencies). \texttt{kind=algorithm}, seed 0 (no randomness);
 \texttt{initial\_algorithm.py} is the switchable source and the final
 plugin bakes in the selected settings. Data use: only
 \texttt{train\_inputs.npy}/\texttt{train\_targets.npy} for selection; no
-simulated stars; validation used once as a check. Code and complete logs:
+simulated stars; validation used only as a held-out check, never for selection. Code and complete logs:
 \url{https://github.com/zacharydoroshenko/Galileo-HypeCycle} at commit cbf8ca3 (final submitted code).
 
 \textbf{Contributions.} Zachary Doroshenko: solver and all experiments
@@ -308,7 +308,5 @@ surveys. \emph{ApJ} 685:553, 2008.
 \bibitem{pricewhelan2017} A.~M.~Price-Whelan et al. The Joker: a custom Monte Carlo sampler for binary-star and
 exoplanet radial velocity data. \emph{ApJ} 837:20, 2017.
 \bibitem{rvsnr2024} D.~Kipping and X.-Y.~Wang. The SNR of idealised radial velocity signals. \emph{MNRAS}, doi:10.1093/mnras/stae1423, 2024 (arXiv:2405.10776).
-\bibitem{kipping2013} D.~M.~Kipping. Parametrizing the exoplanet eccentricity distribution with the beta
-distribution. \emph{MNRAS} 434:L51, 2013.
 \end{thebibliography}
 \end{document}

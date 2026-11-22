@@ -82,12 +82,12 @@ view: `open build/report/main.pdf`).** Tectonic is installed on Zach's laptop; i
 "paired comparisons" sentences, §2 intro, Figure 1 caption, **§4 three insights (largest gap)**, §5, §6 contributions + AI use,
 reward prose, affiliations. Keep each insight to 2–3 lines; if over 4 pages, cut the optional reward section first.
 
-**Timeline:** report due **5:00 pm** (upload at https://submit.siderius.scitra.org/track2/reports, linked to submission **16**).
+**Timeline:** report due **5:00 pm** (upload at https://submit.siderius.scitra.org/track2/reports, linked to submission **72** (final; was 16)).
 Suggest: insights + §5 + AI use by ~4:15, abstract/title by ~4:30, final compile + 4-page check + upload by ~4:45.
 
 ## DEADLINES (organizers on Discord, ~14:42): extended by 30 min because of the delayed emails
 - **Model uploads + GPU access end 4:30 pm PST.** Everything needed from the GPU box is already in `results/` on the laptop.
-- **Report PDF due 5:00 pm PST** (https://submit.siderius.scitra.org/track2/reports, linked to submission **16**).
+- **Report PDF due 5:00 pm PST** (https://submit.siderius.scitra.org/track2/reports, linked to submission **72** (final; was 16)).
 - Suggested report timeline: insights + §1/§5/§6 prose by ~4:00 → abstract/title + table cut to ≤6 rows by ~4:30 →
   4-page check, compile, upload by ~4:45 (15 min buffer).
 
