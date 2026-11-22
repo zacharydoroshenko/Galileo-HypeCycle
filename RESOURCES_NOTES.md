@@ -4,6 +4,55 @@ Sources: the event email, the hackathon README + report template README, the tas
 (TASK_CARD, RELEASE_CONTRACT, simulator, metric/health plugins, analysis/), the official example
 submission, the SIDERIUS master code, the TESS warm-up, and `/data/galileo/README.md` on the GPU box.
 
+## UPDATE FOR PRISHA (~16:05): FINAL = submission 72, and facts for the three insights
+
+**Final model = submission 72 (hidden test 0.4740**; sub. 16 was 0.4725). Report already updated (binding, Table 2, method,
+R12 row, Figure 1 from `results/headroom_final72.json`; body is exactly 4 pages). **Link the report PDF to submission 72.**
+Leaderboard (exoplanet-orbits): removetss 0.4833, Happy Keys 0.4805, us 0.4740. Our best award chance is
+**Outstanding Research & Insight** → the §4 insights carry the most weight. Ref [8] needs authors (doi:10.1093/mnras/stae1423).
+
+Below: FACTS with sources for each insight (claim / evidence / limitation). Wording is ours to write (AI must not write the
+core arguments). Keep each insight to 2–3 lines; the body must stay ≤ 4 pages.
+
+### Insight A: candidate CHOICE, not candidate SEARCH, limits performance
+- Evidence: four search changes (extra e=0.92 starts, 5 starts/candidate, wider frequency window, 600 optimizer evaluations)
+  changed **0 of 1,000** standard train stars (R07). The official analysis gives only +0.011 for a perfect search on our final
+  model (+0.0075 for the baseline, task card); only ~2.7% of our failures are recoverable by search (`fail_recoverable_share`).
+- Evidence: the Occam (Laplace) choice cuts **1-day-alias failures from 177 to 114** (8.4% → 5.4% of failures) on validation
+  (`results/headroom_baseline.json` vs `headroom_final72.json`); paired train evidence std +19/−6 (p=0.01), faithful sparse +14/−4.
+- Evidence (the tradeoff): removing the Occam term for eccentric fits (e>0.6 / e>0.5) loses std 0/−12 and 0/−18 and sparse
+  0/−22 and 1/−38 (R14). The penalty protects against spurious eccentric fits, and its cost is 5–7 true high-e stars on validation.
+- Limitation: yearly-alias failures are unchanged (363 → ~411 by count); the data often genuinely prefer the alias
+  (task card: only 7 of the baseline's alias failures have a better-fitting true orbit). Grid/dense posterior choice (R17, R19–R20) did not beat Occam.
+
+### Insight B: K is biased HIGH at low realised SNR; correcting it helps every group
+- Evidence: on 6,000 train stars with the correct period, median log10 K error is +0.037 (SNR 5–8), +0.045 (8–12), +0.020 (12–20),
+  +0.004 (20–40), +0.001 (>40) dex, i.e. ≈ +10% at low SNR, **right at the 10% success threshold** (R09; consistent with
+  Shen & Turner 2008).
+- Evidence: correction K/√(1+c/SNR²). The same c (6.93) is fitted separately on standard and on 15-observation stars (R11), so the
+  √N scaling holds. Using the **realised** SNR (signal of the fitted curve at the observed times; lower when an eccentric periastron
+  is unsampled) beats the K-based SNR: +21/−9 (calib half B), fresh std +15/−3 (p=0.01), **independent replication +18/−7 (p=0.04)**,
+  sparse +8/−4, high-e +4/−2 (R21). Hidden test 0.4725 → 0.4740.
+- Evidence that this is accuracy, not metric gaming: the threshold-free median relative K error drops **0.0790 (baseline) → 0.0751
+  (sub. 16) → 0.0732 (sub. 72)** on validation. A pure metric trick (recentring the asymmetric K box, K×0.995) gains only
+  +14/−10 (n.s.) (R15/R18).
+- Limitation: c is fitted for the simulator's noise model (jitter U[1,3] m/s). With extra unreported noise the optimal c rises
+  (≈20 on the +2 m/s "noisy" augmentation, R11), so real surveys with different jitter would need recalibration.
+
+### Insight C (methodology): proxies must match the sampling process, and borderline gains must be replicated
+- Evidence: the Occam gain on our first sparse proxy (+1.8 pts, p=0.001) shrank to +0.1 pt on validation (R03→R04). The old proxy kept
+  each star's earliest/latest observation, so spans were ~4.5% too long (mean 1,064 d vs 1,018 d real); the simulator-faithful proxy
+  (one random night in the first/last season) gives the baseline **0.375, identical to the real sparse group** (old: 0.332) (R05).
+  Note: compare MEANS; the span distribution is multimodal (2–5 seasons), so medians jump between ~950 and ~1,160 d.
+- Evidence: jitter fitting for N≥30 looked like a win (+30/−16, p=0.05, R14) but **failed to replicate** (+27/−31, p=0.69, R16).
+  With many variants tested, p≈0.05 is expected by chance. Our final change (R21) passed both tests.
+- Limitation: no train star has e>0.6, so the high-e group can never be represented by train proxies (simulating such stars is
+  outside the intended rules). High-e decisions rest on physics arguments plus the e≤0.6 tail only.
+
+### Numbers for the abstract
+Baseline validation 0.4715 → final 0.4773 (sub. 72; hidden test **0.4740**); 88.0% → **89.1%** of the Fisher benchmark (0.536);
+two mechanisms (Occam candidate choice; realised-SNR K-debias), each with paired, held-out, replicated evidence; 0.31 CPU-s/star.
+
 ## UPDATE FOR PRISHA (~15:30): model FINAL, report status, what's left
 
 **Model: submission 16 (0.4725 hidden test) is final.** Late experiments R14–R19 (all in `report/EXPERIMENT_LOG.md`)
